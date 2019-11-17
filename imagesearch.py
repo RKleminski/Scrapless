@@ -60,7 +60,7 @@ def imagesearcharea(image, x1, y1, x2, y2, precision=0.8, im=None):
         # im.save('testarea.png') usefull for debugging purposes, this will save the captured region as "testarea.png"
 
     img_rgb = np.array(im)
-    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
     template = cv2.imread(image, 0)
 
     res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
