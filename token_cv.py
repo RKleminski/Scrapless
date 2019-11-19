@@ -5,45 +5,45 @@ import cv2
 from imagesearch import *
 
 
-# provided an image, determine if we are looking at a loot screen
-# and return the answer
-def detect_loot_screen(screen_grab, slice, target):
+# provided an image, determine if an interesting element is in sight
+def detect_element(screen_grab, slice, target, prec=0.8):
 
     # slice off the critical area from full-screen capture
-    # (ie. the area that contains loot screen header)
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
 
-    # attempt to detect the header
-    detect = imagesearcharea(target, 0, 0, 0, 0, precision=0.8, im=image_slice)
+    # attempt to detect the target
+    detect = imagesearcharea(target, 0, 0, 0, 0, precision=prec, im=image_slice)
 
-    # if header found at any position, return true
+    # if target found at any position, return true
     if detect[0] != -1:
         return True
     else:
         return False
 
 
-# provided an image, determine if we had a token drop in loot screen
-# and return the answer
-def detect_token_drop(screen_grab, slice, target):
+# provided an image of the lobby, retrieve threat level of the hunt queued for
+def read_threat_level(screen_grab, slice, tess_config=None):
 
     # slice off the critical area from full-screen capture 
-    # (ie. the area that contains loot drops)
+    # (ie. the area that contains threat level)
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
 
-    # attempt to detect the token
-    detect =  imagesearcharea(target, 0, 0, 0, 0, precision=0.9, im=image_slice)
+    # preprocessing to increase tesseract's ability to read the image
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+    image_slice = cv2.resize(image_slice, (520, 470))
+    ret, ocr_image = cv2.threshold(image_slice, 250, 255, cv2.THRESH_BINARY)
+    ocr_image = cv2.bitwise_not(ocr_image)
 
-    # if token found at any position, return true
-    if detect[0] != -1:
-        return True
-    else:
-        return False
+    # read the name; config supplied with the project is recommended
+    # as it disables dictionary search; Behemoth names are not found in dictionaries
+    threat = pytesseract.image_to_string(ocr_image, config='digits')
+
+    # return the threat level
+    return int(threat) if threat != '' else 0
 
 
-# a function to determine the hunt type from image
-# using OCR on behemoth name
-def read_hunt_type(screen_grab, slice, tess_config=None):
+# a function to determine the hunted behemoth
+def read_behemoth(screen_grab, slice, tess_config=None):
 
     # slice off the critical area from full-screen capture 
     # (ie. the area that contains behemoth name)
@@ -57,14 +57,4 @@ def read_hunt_type(screen_grab, slice, tess_config=None):
     # as it disables dictionary search; Behemoth names are not found in dictionaries
     name = pytesseract.image_to_string(ocr_image, config=tess_config)
 
-
-    # utilise hunt dictionary to transform behemoth name into a hunt category
-    with open('./data/json/hunts.json', 'r') as json_file:
-        hunt_dict = json.load(json_file)
-
-
-    # return None if unable to determine valid hunt category
-    if name in hunt_dict.keys():
-        return hunt_dict[name]
-    else:
-        return None
+    return name

@@ -2,20 +2,37 @@
     "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
     "tesseract_conf": "./data/tesseract/dauntless",
 
+    "user": "Roel",
+
     "screen_x": 0,
     "screen_y": 0,
     "screen_width": 1920,
     "screen_height": 1080,
+
+    "lobby_height_start": 835,
+    "lobby_height_end": 885,
+    "lobby_width_start": 1350,
+    "lobby_width_end": 1860,
+
+    "patrol_height_start": 990,
+    "patrol_height_end": 1045,
+    "patrol_width_start": 775,
+    "patrol_width_end": 995,
+
+    "threat_height_start": 213,
+    "threat_height_end": 260,
+    "threat_width_start": 1460,
+    "threat_width_end": 1512,
 
     "loot_height_start": 45,
     "loot_height_end": 205,
     "loot_width_start": 345,
     "loot_width_end": 675,
 
-    "hunt_height_start": 20,
-    "hunt_height_end": 50,
-    "hunt_width_start": 95,
-    "hunt_width_end": 395,
+    "behe_height_start": 20,
+    "behe_height_end": 50,
+    "behe_width_start": 95,
+    "behe_width_end": 395,
 
     "token_height_start": 265,
     "token_height_end": 850,

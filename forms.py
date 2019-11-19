@@ -1,6 +1,11 @@
 import requests, warnings
 import urllib.request
+import gscholar
+import time
+from random import randint
 from bs4 import BeautifulSoup
+
+
 
 in_url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/viewform'
 
