@@ -6,17 +6,37 @@ from random import randint
 from bs4 import BeautifulSoup
 
 
+# in_url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/viewform'
 
-in_url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/viewform'
-
-res = urllib.request.urlopen(in_url)
-soup = BeautifulSoup(res.read(), 'html.parser')
-get_names = lambda f: [v for k,v in f.attrs.items() if 'label' in k]
-get_name = lambda f: get_names(f)[0] if len(get_names(f))>0 else 'unknown'
-all_questions = soup.form.findChildren(attrs={'name': lambda x: x and x.startswith('entry.')})
+# res = urllib.request.urlopen(in_url)
+# soup = BeautifulSoup(res.read(), 'html.parser')
+# get_names = lambda f: [v for k,v in f.attrs.items() if 'label' in k]
+# get_name = lambda f: get_names(f)[0] if len(get_names(f))>0 else 'unknown'
+# all_questions = soup.form.findChildren(attrs={'name': lambda x: x and x.startswith('entry.')})
 
 #{get_name(q): q['name'] for q in all_questions}
 
-url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/formResponse'
-form_data = {"entry.363103481": "No", "entry.936871560": "Dire", "entry.985493627": "1.0.2","draftResponse":'[]',"pageHistory":0}
-requests.post(url, data=form_data)
+
+'''
+A function to submit the data to the basic data-gathering Form
+This supplies only a binary token-drop information, along with 
+hunt category and patch version of the game
+
+More nuanced data is withheld here, and kept for the second, more
+detailed form
+'''
+def fill_basic_form(if_token_drop, hunt_category, patch_version):
+
+    # address to the basic data collection form
+    url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/formResponse'
+    
+    # prepare response data
+    form_data = {"entry.363103481": if_token_drop, 
+                 "entry.936871560": hunt_category, 
+                 "entry.985493627": patch_version,
+                 "draftResponse":'[]',
+                 "pageHistory":0
+                 }
+    
+    # send the request and return a response
+    return requests.post(url, data=form_data)

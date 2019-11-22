@@ -1,6 +1,8 @@
 {
     "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
-    "tesseract_conf": "./data/tesseract/dauntless",
+    "tesseract_conf": ".\\data\\tesseract\\dauntless",
+
+    "game_path": "E:\\Epic Games\\Dauntless",
 
     "user": "Roel",
 
@@ -17,12 +19,12 @@
     "patrol_height_start": 990,
     "patrol_height_end": 1045,
     "patrol_width_start": 775,
-    "patrol_width_end": 995,
+    "patrol_width_end": 1145,
 
-    "threat_height_start": 213,
-    "threat_height_end": 260,
-    "threat_width_start": 1460,
-    "threat_width_end": 1512,
+    "threat_height_start": 215,
+    "threat_height_end": 255,
+    "threat_width_start": 1465,
+    "threat_width_end": 1505,
 
     "loot_height_start": 45,
     "loot_height_end": 205,

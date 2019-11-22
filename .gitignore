@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# Custom ignore for this project
+ocr_grabs/
+test_grabs/
+error_logs
+*.png
+
 # Distribution / packaging
 .Python
 build/
