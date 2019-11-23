@@ -6,6 +6,11 @@ import time
 import platform
 import subprocess
 
+'''
+ORIGINAL CODE BY: drov0
+AVAILABLE AT: https://github.com/drov0/python-imagesearch
+'''
+
 is_retina = False
 if platform.system() == "Darwin":
     is_retina = subprocess.call("system_profiler SPDisplaysDataType | grep 'retina'", shell=True)

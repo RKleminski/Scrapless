@@ -3,6 +3,7 @@ import time
 import datetime
 import pytesseract
 import cv2
+import logging
 
 from imagesearch import *
 from token_cv import *
@@ -14,9 +15,23 @@ from forms import *
 with open('./data/json/config.json', 'r') as config_file:
     config = json.load(config_file)
 
+# configure log file
+log = get_logger()
 
 # configure tesseract path
 pytesseract.pytesseract.tesseract_cmd = config['tesseract_path']
+
+
+# generate random user string if no name is provided
+if config['user'] == '':
+
+    log.info('No user found, generating random ID')
+
+    config['user'] = id_generator()
+    
+    # save updated config
+    with open('./data/json/config.json', 'w') as dump_file:
+        json.dump(config, dump_file, indent=2, separators=(',',':'))
 
 
 # read the screen size and screen region capture from config
@@ -48,6 +63,7 @@ lobby_data = {
     'threat_slice': [config[x] for x in ['threat_height_start','threat_height_end','threat_width_start','threat_width_end']],
 }
 
+
 # store threat level
 threat_level = -1
 hunt_type = ''
@@ -58,31 +74,23 @@ while True:
 
     try:
         # pause between captures
-        time.sleep(2)
+        time.sleep(1)
 
         # capture the current state of the screen
         screen_grab = region_grabber(screen_region)
 
 
-        # # get threat level only if we don't have a valid one yet
-        if threat_level <= 0:
-
-            # process lobby visual data
-            threat_level, hunt_type = lobby_reader(screen_grab, lobby_data)
+        # process lobby visual data
+        threat_level, hunt_type = lobby_reader(screen_grab, lobby_data, log)
 
 
         # don't bother further if threat is too low
         if threat_level > -1:
 
             # process loot screen visual data
-            threat_level = loot_reader(screen_grab, loot_data, threat_level, hunt_type, config)
+            threat_level = loot_reader(screen_grab, loot_data, threat_level, hunt_type, config, log)
     
 
     except Exception:
 
-        exception_handler(Exception)
-        
-        with open('./scrapless.log', 'w') as log_file:
-            log_file.write(f'An error has occured, log saved to error_logs directory\n')
-        
-        print(f'An error has occured, log saved to error_logs directory\n')
+        log.exception('An exception has occured:')
