@@ -73,6 +73,7 @@ hunt_type = ''
 while True:
 
     try:
+
         # pause between captures
         time.sleep(1)
 
@@ -81,7 +82,7 @@ while True:
 
 
         # process lobby visual data
-        threat_level, hunt_type = lobby_reader(screen_grab, lobby_data, log)
+        threat_level, hunt_type = lobby_reader(screen_grab, lobby_data, threat_level, hunt_type, log)
 
 
         # don't bother further if threat is too low

@@ -44,7 +44,8 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
 Helper function which wraps all the lobby image detection and OCR under one name, 
 to clean up the main file code a little
 '''
-def lobby_reader(screen_grab, lobby_data, log):
+def lobby_reader(screen_grab, lobby_data, threat_level, hunt_type, log):
+
 
     lobby_slice = lobby_data['lobby_slice']
     lobby_img = lobby_data['lobby_img']
@@ -54,12 +55,12 @@ def lobby_reader(screen_grab, lobby_data, log):
 
     threat_slice = lobby_data['threat_slice']
 
-    threat_level = -1
-    hunt_type = ''
-
 
     # determine the hunt only if we see the lobby
     if detect_element(screen_grab, lobby_slice, lobby_img):
+
+        threat_level = -1
+        hunt_type = ''
 
         threat_level = read_threat_level(screen_grab, threat_slice)
         hunt_type = 'Patrol' if detect_element(screen_grab, patrol_slice, patrol_img) else 'Pursuit'
@@ -68,7 +69,9 @@ def lobby_reader(screen_grab, lobby_data, log):
         log.info(f'Lobby detected, threat level {threat_level} {hunt_type}')
 
         # take a break to save resources
-        time.sleep(30)
+        # only if found threat level is valid
+        if threat_level > 0:
+            time.sleep(30)
 
     return threat_level, hunt_type
 
@@ -86,6 +89,7 @@ def loot_reader(screen_grab, loot_data, threat_level, hunt_type, config, log):
     token_img = loot_data['token_img']
 
     behe_slice = loot_data['behe_slice']
+
 
     # proceed further only if loot screen is detected
     if detect_element(screen_grab, loot_slice, loot_img, prec=0.7):
