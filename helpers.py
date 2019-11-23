@@ -107,7 +107,7 @@ def loot_reader(screen_grab, loot_data, threat_level, hunt_type, config, log):
         user = config['user']
 
         # send data to Forms
-        fill_basic_form(if_drop, hunt_cat, patch_ver)
+        fill_basic_form(if_drop, hunt_tier, patch_ver)
         fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, patch_ver, user)
 
         # open log file
