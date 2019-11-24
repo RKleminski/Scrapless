@@ -46,32 +46,31 @@ to clean up the main file code a little
 '''
 def lobby_reader(screen_grab, lobby_data, threat_level, hunt_type, log):
 
-
     lobby_slice = lobby_data['lobby_slice']
     lobby_img = lobby_data['lobby_img']
-
-    patrol_slice = lobby_data['patrol_slice']
-    patrol_img = lobby_data['patrol_img']
-
-    threat_slice = lobby_data['threat_slice']
-
 
     # determine the hunt only if we see the lobby
     if detect_element(screen_grab, lobby_slice, lobby_img):
 
-        threat_level = -1
+        patrol_slice = lobby_data['patrol_slice']
+        patrol_img = lobby_data['patrol_img']
+        threat_slice = lobby_data['threat_slice']
+
+        new_threat_level = -1
         hunt_type = ''
 
-        threat_level = read_threat_level(screen_grab, threat_slice)
+        new_threat_level = read_threat_level(screen_grab, threat_slice)
         hunt_type = 'Patrol' if detect_element(screen_grab, patrol_slice, patrol_img) else 'Pursuit'
         
-        # open log file
-        log.info(f'Lobby detected, threat level {threat_level} {hunt_type}')
+        # write out only if we found a valid new threat level
+        if new_threat_level != threat_level:
+            
+            if new_threat_level <= 0:
+                log.info(f'Detected an invalid hunt: T{threat_level} {hunt_type}')
+            else:
+                log.info(f'Lobby detected, T{threat_level} {hunt_type}')
 
-        # take a break to save resources
-        # only if found threat level is valid
-        if threat_level > 0:
-            time.sleep(30)
+            return new_threat_level, hunt_type
 
     return threat_level, hunt_type
 
@@ -85,14 +84,14 @@ def loot_reader(screen_grab, loot_data, threat_level, hunt_type, config, log):
     loot_slice = loot_data['loot_slice']
     loot_img = loot_data['loot_img']
 
-    token_slice = loot_data['token_slice']
-    token_img = loot_data['token_img']
-
-    behe_slice = loot_data['behe_slice']
-
-
     # proceed further only if loot screen is detected
     if detect_element(screen_grab, loot_slice, loot_img, prec=0.7):
+
+        log.info(f'Saved loot screen for processing, it is safe to proceed')
+
+        token_slice = loot_data['token_slice']
+        token_img = loot_data['token_img']
+        behe_slice = loot_data['behe_slice']
 
         # determine if we had a token drop
         if_drop = 'Yes' if detect_element(screen_grab, token_slice, token_img, prec=0.95) else 'No'
