@@ -49,7 +49,7 @@ def read_threat_level(screen_grab, slice):
     threat = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 digits')
 
     # return the threat level
-    return int(threat) if threat != '' else 0
+    return threat if threat != '' else 0
 
 
 '''
@@ -59,14 +59,21 @@ the behemoth. This allows for some more fine-grained data gathering
 Config supplied with the project is recommended, as it disables dictionary search;
 behemoth names are not real english words, so the dictionaries get needlessly confused
 when trying to determine them as a word
+
+Inverse parameter dictates whether a binary NOT should be applied to the entire image
+This is necessary to properly read behemoth names in lobby, but will throw your results 
+off in the loot screen
 '''
-def read_behemoth(screen_grab, slice, tess_config=None):
+def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
 
     # slice off the critical area from full-screen capture 
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
 
     # thresholding to increase tesseract's ability to read the image
     ret, ocr_image = cv2.threshold(image_slice, 100, 255, cv2.THRESH_BINARY_INV)
+
+    if inverse:
+        ocr_image = cv2.bitwise_not(ocr_image)
 
     # read the behemoth name
     name = pytesseract.image_to_string(ocr_image, config=tess_config)

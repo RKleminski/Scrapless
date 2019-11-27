@@ -1,97 +1,165 @@
-import json
 import time
-import datetime
 import pytesseract
-import cv2
-import logging
+import settings as stng
 
 from imagesearch import *
 from token_cv import *
-from helpers import *
+from utils import *
 from forms import *
 
 
-# read paremetres from JSON
-with open('./data/json/config.json', 'r') as config_file:
-    config = json.load(config_file)
+'''
+Helper function which wraps all the lobby image detection and OCR under one name, 
+to clean up the main file code a little
+'''
+def lobby_reader(screen_grab):
 
-# configure log file
-log = get_logger()
-
-# configure tesseract path
-pytesseract.pytesseract.tesseract_cmd = config['tesseract_path']
-
-
-# generate random user string if no name is provided
-if config['user'] == '':
-
-    log.info('No user found, generating random ID')
-
-    config['user'] = id_generator()
+    threat_level = -1
+    hunt_type = ''
+    behemoth_name = ''
     
-    # save updated config
-    with open('./data/json/config.json', 'w') as dump_file:
-        json.dump(config, dump_file, indent=2, separators=(',',':'))
+    # determine the hunt only if we see the lobby
+    if detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG):
+
+        stng.LOG.info('Lobby detected, processing...')
+
+        threat_level = read_threat_level(screen_grab, stng.THRT_SLC)
+        hunt_type = 'Patrol' if detect_element(screen_grab, stng.PTRL_SLC, stng.PTRL_IMG) else 'Pursuit'
+
+        # determine behemoth name
+        behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
+        print(behemoth_name)
+        behemoth_name = trim_behemoth_name(behemoth_name)
+
+        # inform user if retrieved hunt details are invalid
+        if not verify_hunt(threat_level, behemoth_name):
+            stng.LOG.info(f'Invalid hunt detected: {behemoth_name} T{threat_level} {hunt_type}, retrying...')
+        else:
+            stng.LOG.info(f'Valid hunt detected: {behemoth_name} T{threat_level} {hunt_type}, awaiting loot screen...')
+
+    return threat_level, hunt_type, behemoth_name
 
 
-# read the screen size and screen region capture from config
-screen_region = tuple([config[x] for x in ['screen_x','screen_y','screen_width','screen_height']])
-scn_wdth = config['screen_width']
-scn_hght = config['screen_height']
+'''
+Helper function which wraps all the loot image detection and OCR under one name,
+to clean up the main file code a little
+'''
+def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
+
+    # proceed further only if loot screen is detected
+    if detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
+
+        stng.LOG.info(f'Loot screen detected, processing...')
+
+        # determine if we had a token drop
+        if_drop = 'Yes' if detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
+
+        # determine hunt category
+        hunt_tier = get_hunt_tier(threat_level)
+
+        loot_behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, tess_config=stng.TESS_CONF)
+        loot_behemoth_name = trim_behemoth_name(loot_behemoth_name)
+
+        if behemoth_name == loot_behemoth_name:
+
+            # send data to Forms
+            fill_basic_form(if_drop, hunt_tier, stng.GAME_VER)
+            fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, stng.GAME_VER, stng.USER)
+
+            # open log file
+            stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}')
+
+            return 'OK'
+        
+        else:
+            stng.LOG.info(f'WARNING: Expected behemoth {behemoth_name} but found {loot_behemoth_name}. Retrying...')
+            return 'ERROR'
+
+    return 'NO_SCREEN'
 
 
-# data for processing the loot screen
-loot_data = {
-    'loot_slice': [config[x] for x in ['loot_height_start','loot_height_end','loot_width_start','loot_width_end']],
-    'loot_img': f'./data/images/targets/loot_screen/{scn_wdth}_{scn_hght}_loot.png',
+'''
+When provided with threat level and a behemoth name, the function will return
+a boolean value determining if these parametres are those of a valid hunt
+'''
+def verify_hunt(threat_level, behemoth_name):
 
-    'token_slice': [config[x] for x in ['token_height_start','token_height_end','token_width_start','token_width_end']],
-    'token_img': f'./data/images/targets/token/{scn_wdth}_{scn_hght}_token.png',
-
-    'behe_slice': [config[x] for x in ['behe_height_start','behe_height_end','behe_width_start','behe_width_end']],
-}
-
-
-# data for processing the lobby screen
-lobby_data = {
-    'lobby_slice': [config[x] for x in ['lobby_height_start','lobby_height_end','lobby_width_start','lobby_width_end']],
-    'lobby_img': f'./data/images/targets/lobby_screen/{scn_wdth}_{scn_hght}_lobby.png',
-
-    'patrol_slice': [config[x] for x in ['patrol_height_start','patrol_height_end','patrol_width_start','patrol_width_end']],
-    'patrol_img': f'./data/images/targets/patrol_screen/{scn_wdth}_{scn_hght}_patrol.png',
-
-    'threat_slice': [config[x] for x in ['threat_height_start','threat_height_end','threat_width_start','threat_width_end']],
-}
-
-
-# store threat level
-threat_level = -1
-hunt_type = ''
-
-
-# work in the loop of image recognition
-while True:
-
-    try:
-
-        # pause between captures
-        time.sleep(1)
-
-        # capture the current state of the screen
-        screen_grab = region_grabber(screen_region)
-
-
-        # process lobby visual data
-        threat_level, hunt_type = lobby_reader(screen_grab, lobby_data, threat_level, hunt_type, log)
-
-
-        # don't bother further if threat is too low
-        if threat_level > -1:
-
-            # process loot screen visual data
-            threat_level = loot_reader(screen_grab, loot_data, threat_level, hunt_type, config, log)
+    if behemoth_name in stng.HUNT.keys():
+        if threat_level in stng.HUNT[behemoth_name]:
+            return True
+    
+    return False
     
 
-    except Exception:
+'''
+Bread and butter of the program, running in a loop to continously
+read the screen of the user, in order to recover data and process
+data collecting efforts
+'''
+def main():
 
-        log.exception('An exception has occured:')
+    # configure tesseract path
+    pytesseract.pytesseract.tesseract_cmd = stng.TESS_PTH
+
+    # store lobby variables
+    threat_level = ''
+    hunt_type = ''
+    behemoth_name = ''
+    valid_hunt = False
+    error_count = 0
+
+    # work in the loop of image recognition
+    while True:
+
+        try:
+
+            # pause between captures
+            time.sleep(1)
+
+            # capture the current state of the screen
+            screen_grab = region_grabber(stng.SCRN_REG)
+
+
+            # search for new hunt details only if current are invalid
+            if not valid_hunt:
+
+                # process lobby visual data
+                threat_level, hunt_type, behemoth_name = lobby_reader(screen_grab) 
+                valid_hunt = verify_hunt(threat_level, behemoth_name)
+
+
+            # only attempt detecting loot if hunt is valid
+            if valid_hunt:
+
+                # process loot screen visual data
+                status = loot_reader(screen_grab, threat_level, hunt_type, behemoth_name)
+
+                # if an error has been detected, increment error counter
+                if status == 'ERROR':
+                    error_count += 1
+                    time.sleep(2)
+
+                # inform user of abandoning the process if retry limit reached
+                if error_count == 10:
+                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.')
+    
+                # reset variable on successful form submission or retry limit
+                if status == 'OK' or error_count == 5:
+
+                    threat_level = ''
+                    hunt_type = ''
+                    behemoth_name = ''
+                    valid_hunt = False
+                    error_count = 0
+
+        # log any exceptions encountered by the program
+        except Exception:
+
+            stng.LOG.exception('An exception has occured: ')
+
+
+'''
+Standard stuff, run main function if running the file
+'''
+if __name__ == '__main__':
+    main()
