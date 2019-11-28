@@ -1,38 +1,58 @@
 {
-  "game_path":"E:/Epic Games/Dauntless",
-  "tesseract_path":"C:/Program Files/Tesseract-OCR/tesseract.exe",
-  "tesseract_conf":"./data/tesseract/dauntless",
-  "user":"Roel",
-  "screen_x":0,
-  "screen_y":0,
-  "screen_width":1920,
-  "screen_height":1080,
-  "lobby_height_start":835,
-  "lobby_height_end":885,
-  "lobby_width_start":1350,
-  "lobby_width_end":1860,
-  "patrol_height_start":990,
-  "patrol_height_end":1045,
-  "patrol_width_start":775,
-  "patrol_width_end":1145,
-  "threat_height_start":215,
-  "threat_height_end":255,
-  "threat_width_start":1465,
-  "threat_width_end":1505,
-  "loot_height_start":45,
-  "loot_height_end":205,
-  "loot_width_start":345,
-  "loot_width_end":675,
-  "behe_lobby_height_start":140,
-  "behe_lobby_height_end":180,
-  "behe_lobby_width_start":1455,
-  "behe_lobby_width_end":1850,
-  "behe_loot_height_start":20,
-  "behe_loot_height_end":50,
-  "behe_loot_width_start":95,
-  "behe_loot_width_end":395,
-  "token_height_start":265,
-  "token_height_end":850,
-  "token_width_start":95,
-  "token_width_end":490
+  "user": {
+    "name": "Roel"
+  },
+  "paths": {
+    "game": "E:/Epic Games/Dauntless",
+    "tesseract": "C:/Program Files/Tesseract-OCR/tesseract.exe",
+    "tesseract_conf": "./data/tesseract/dauntless"
+  },
+  "screen": {
+    "x": 0,
+    "y": 0,
+    "width": 1920,
+    "height": 1080
+  },
+  "lobby_detect": {
+    "height_start": 835,
+    "height_end": 885,
+    "width_start": 1350,
+    "width_end": 1860
+  },
+  "htype_detect": {
+    "height_start": 990,
+    "height_end": 1045,
+    "width_start": 775,
+    "width_end": 1145
+  },
+  "threat_detect": {
+    "height_start": 215,
+    "height_end": 255,
+    "width_start": 1465,
+    "width_end": 1505
+  },
+  "loot_detect": {
+    "height_start": 45,
+    "height_end": 205,
+    "width_start": 345,
+    "width_end": 675
+  },
+  "behe_lobby": {
+    "height_start": 140,
+    "height_end": 180,
+    "width_start": 1455,
+    "width_end": 1850
+  },
+  "behe_loot": {
+    "height_start": 20,
+    "height_end": 50,
+    "width_start": 95,
+    "width_end": 395
+  },
+  "token_detect": {
+    "height_start": 265,
+    "height_end": 850,
+    "width_start": 95,
+    "width_end": 490
+  }
 }

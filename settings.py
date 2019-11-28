@@ -2,6 +2,7 @@ import json
 import random
 import string
 import logging
+import cv2
 
 from datetime import datetime
 
@@ -20,11 +21,11 @@ with open(HUNT_PTH, 'r') as hunt_file:
     HUNT = json.load(hunt_file)
 
 
-SCRN_REG = tuple([CONF[x] for x in ['screen_x','screen_y','screen_width','screen_height']])
-SCRN_WDT = CONF['screen_width']
-SCRN_HGT = CONF['screen_height']
+SCRN_REG = tuple([CONF['screen'][x] for x in ['x','y','width','height']])
+SCRN_WDT = CONF['screen']['width']
+SCRN_HGT = CONF['screen']['height']
 
-GAME_PTH = CONF['game_path']
+GAME_PTH = CONF['paths']['game']
 
 
 '''
@@ -38,7 +39,7 @@ def user_init():
     chars = string.ascii_uppercase + string.digits
     anon_id = ''.join(random.choice(chars) for _ in range(20))
 
-    CONF['user'] = anon_id
+    CONF['user']['name'] = anon_id
 
     # save updated config
     with open(CONF_PTH, 'w') as dump_file:
@@ -103,31 +104,31 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
 #
 # OTHER CONSTANTS
 #
-BHMT_LOBBY_SLC = [CONF[x] for x in ['behe_lobby_height_start','behe_lobby_height_end','behe_lobby_width_start','behe_lobby_width_end']]
-BHMT_LOOT_SLC = [CONF[x] for x in ['behe_loot_height_start','behe_loot_height_end','behe_loot_width_start','behe_loot_width_end']]
+BHMT_LOBBY_SLC = [CONF['behe_lobby'][x] for x in ['height_start','height_end','width_start','width_end']]
+BHMT_LOOT_SLC = [CONF['behe_loot'][x] for x in ['height_start','height_end','width_start','width_end']]
 
 GAME_VER = get_patch_version()
 
-LOBBY_SLC = [CONF[x] for x in ['lobby_height_start','lobby_height_end','lobby_width_start','lobby_width_end']]
-LOBBY_IMG = f'./data/images/targets/lobby_screen/{SCRN_WDT}_{SCRN_HGT}_lobby.png'
+LOBBY_SLC = [CONF['lobby_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+LOBBY_IMG = cv2.imread(f'./data/images/targets/lobby_screen/{SCRN_WDT}_{SCRN_HGT}_lobby.png', 0)
 
 LOG = get_logger()
 
-LOOT_SLC = [CONF[x] for x in ['loot_height_start','loot_height_end','loot_width_start','loot_width_end']]
-LOOT_IMG =  f'./data/images/targets/loot_screen/{SCRN_WDT}_{SCRN_HGT}_loot.png'
+LOOT_SLC = [CONF['loot_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+LOOT_IMG =  cv2.imread(f'./data/images/targets/loot_screen/{SCRN_WDT}_{SCRN_HGT}_loot.png', 0)
 
-PTRL_SLC = [CONF[x] for x in ['patrol_height_start','patrol_height_end','patrol_width_start','patrol_width_end']]
-PTRL_IMG = f'./data/images/targets/patrol_screen/{SCRN_WDT}_{SCRN_HGT}_patrol.png'
+HTYPE_SLC = [CONF['htype_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+HTYPE_IMG = cv2.imread(f'./data/images/targets/patrol_screen/{SCRN_WDT}_{SCRN_HGT}_patrol.png', 0)
 
-USER = CONF['user'] if CONF['user'] != "" else user_init()
+USER = CONF['user']['name'] if CONF['user']['name'] != "" else user_init()
 
-TESS_PTH = CONF['tesseract_path']
-TESS_CONF = CONF['tesseract_conf']
+TESS_PTH = CONF['paths']['tesseract']
+TESS_CONF = CONF['paths']['tesseract_conf']
 
-THRT_SLC = [CONF[x] for x in ['threat_height_start','threat_height_end','threat_width_start','threat_width_end']]
+THRT_SLC = [CONF['threat_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
 
-TOKEN_SLC = [CONF[x] for x in ['token_height_start','token_height_end','token_width_start','token_width_end']]
-TOKEN_IMG = f'./data/images/targets/token/{SCRN_WDT}_{SCRN_HGT}_token.png'
+TOKEN_SLC = [CONF['token_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{SCRN_WDT}_{SCRN_HGT}_token.png', 0)
 
 
 

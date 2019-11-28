@@ -1,7 +1,21 @@
 import json
 import pytesseract
 import cv2
-from imagesearch import *
+import numpy as np
+import pyautogui
+
+
+'''
+Returns a designated area of the screen
+'''
+def region_grabber(region):
+    
+    x1 = region[0]
+    y1 = region[1]
+    width = region[2] - x1
+    height = region[3] - y1
+
+    return pyautogui.screenshot(region=(x1, y1, width, height))
 
 
 '''
@@ -15,15 +29,15 @@ def detect_element(screen_grab, slice, target, prec=0.8):
 
     # slice off the critical area from full-screen capture
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
 
-    # attempt to detect the target
-    detect = imagesearcharea(target, 0, 0, 0, 0, precision=prec, im=image_slice)
-
+    res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    
     # if target found at any position, return true
-    if detect[0] != -1:
-        return True
-    else:
+    if max_val < prec:
         return False
+    return True
 
 
 '''

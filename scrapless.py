@@ -2,7 +2,6 @@ import time
 import pytesseract
 import settings as stng
 
-from imagesearch import *
 from token_cv import *
 from utils import *
 from forms import *
@@ -24,11 +23,10 @@ def lobby_reader(screen_grab):
         stng.LOG.info('Lobby detected, processing...')
 
         threat_level = read_threat_level(screen_grab, stng.THRT_SLC)
-        hunt_type = 'Patrol' if detect_element(screen_grab, stng.PTRL_SLC, stng.PTRL_IMG) else 'Pursuit'
+        hunt_type = 'Patrol' if detect_element(screen_grab, stng.HTYPE_SLC, stng.HTYPE_IMG) else 'Pursuit'
 
         # determine behemoth name
         behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
-        print(behemoth_name)
         behemoth_name = trim_behemoth_name(behemoth_name)
 
         # inform user if retrieved hunt details are invalid
