@@ -20,3 +20,7 @@ When you intend to play *Dauntless*, simply run *Scrapless* and let it do its wo
 # Bugs and issues
 
 Report them here, or contact me directly through social media handles mentioned when sharing the link to this repository.
+
+Current issues and limitations:
+* Program works with 1920x1080p resolution only (fullscreen or borderless fullscreen)
+* Failing a hunt is not detected
