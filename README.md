@@ -4,7 +4,7 @@ Python script for automated data collection on Dauntless Bounty Tokens
 # Setup
 
 1. Install the newest version of Tesseract (available [here](https://github.com/UB-Mannheim/tesseract/wiki))
-2. Download the repository, or pre-built executable from the releases page
+2. Download the repository, or pre-built executable from the [releases](https://github.com/RKleminski/Scrapless/releases) page
 3. Open `config.json` located in `/scrapless/data/json/` and fill in the following:
 
     a) Provide your nickname in the field `name` of `user` section of the config. This is stored for future time-series analysis and other per-user statistics. If you do not wish to be identifiable, leaving this field empty will prompt Scrapless to fill it with a random ID composed of 20 characters. It would be of great help if you used this exact ID in the future, even after migrating to newer versions of the program
