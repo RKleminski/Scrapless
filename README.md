@@ -23,4 +23,3 @@ Report them here, or contact me directly through social media handles mentioned 
 
 Current issues and limitations:
 * Program works with 1920x1080p resolution only (fullscreen or borderless fullscreen)
-* Failing a hunt is not detected
