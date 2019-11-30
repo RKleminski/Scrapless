@@ -36,6 +36,8 @@ def user_init():
 
     global CONF
 
+    LOG.info('SETUP: No username found, generating a random user ID.')
+
     chars = string.ascii_uppercase + string.digits
     anon_id = ''.join(random.choice(chars) for _ in range(20))
 

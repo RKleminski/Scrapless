@@ -32,6 +32,9 @@ to reduce it to the basic "species".
 def trim_behemoth_name(name):
 
     name = name.replace(' (Heroic)', '')
-    name = name.split(' ')[-1]
+    name_vec = name.split(' ')
 
-    return name
+    if name_vec[0] != 'Defeated':
+        return name_vec[-1]
+    else:
+        return name_vec[0]

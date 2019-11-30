@@ -68,7 +68,8 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
             stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}')
 
             return 'OK'
-        
+        elif loot_behemoth_name == 'Defeated':
+            return 'DEFEAT'
         else:
             stng.LOG.info(f'WARNING: Expected behemoth {behemoth_name} but found {loot_behemoth_name}. Retrying...')
             return 'ERROR'
@@ -141,8 +142,12 @@ def main():
                 if error_count == 10:
                     stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.')
     
+                # handle the situation of defeat
+                if status == 'DEFEAT':
+                    stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.')
+
                 # reset variable on successful form submission or retry limit
-                if status == 'OK' or error_count == 5:
+                if status == 'OK' or status == 'DEFEAT' or error_count == 5:
 
                     threat_level = ''
                     hunt_type = ''
