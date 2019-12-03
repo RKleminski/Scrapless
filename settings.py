@@ -106,20 +106,20 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
 #
 # OTHER CONSTANTS
 #
-BHMT_LOBBY_SLC = [CONF['behe_lobby'][x] for x in ['height_start','height_end','width_start','width_end']]
-BHMT_LOOT_SLC = [CONF['behe_loot'][x] for x in ['height_start','height_end','width_start','width_end']]
+BHMT_LOBBY_SLC = [CONF['lobby']['behemoth_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
+BHMT_LOOT_SLC = [CONF['loot']['behemoth_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 
 GAME_VER = get_patch_version()
 
-LOBBY_SLC = [CONF['lobby_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+LOBBY_SLC = [CONF['lobby']['slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 LOBBY_IMG = cv2.imread(f'./data/images/targets/lobby_screen/{SCRN_WDT}_{SCRN_HGT}_lobby.png', 0)
 
 LOG = get_logger()
 
-LOOT_SLC = [CONF['loot_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+LOOT_SLC = [CONF['loot']['slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 LOOT_IMG =  cv2.imread(f'./data/images/targets/loot_screen/{SCRN_WDT}_{SCRN_HGT}_loot.png', 0)
 
-HTYPE_SLC = [CONF['htype_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+HTYPE_SLC = [CONF['lobby']['hunt_type_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 HTYPE_IMG = cv2.imread(f'./data/images/targets/patrol_screen/{SCRN_WDT}_{SCRN_HGT}_patrol.png', 0)
 
 USER = CONF['user']['name'] if CONF['user']['name'] != "" else user_init()
@@ -127,9 +127,9 @@ USER = CONF['user']['name'] if CONF['user']['name'] != "" else user_init()
 TESS_PTH = CONF['paths']['tesseract']
 TESS_CONF = CONF['paths']['tesseract_conf']
 
-THRT_SLC = [CONF['threat_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+THRT_SLC = [CONF['lobby']['threat_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 
-TOKEN_SLC = [CONF['token_detect'][x] for x in ['height_start','height_end','width_start','width_end']]
+TOKEN_SLC = [CONF['loot']['token_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{SCRN_WDT}_{SCRN_HGT}_token.png', 0)
 
 
