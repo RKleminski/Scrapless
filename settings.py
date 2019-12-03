@@ -129,6 +129,8 @@ TESS_CONF = CONF['paths']['tesseract_conf']
 
 THRT_SLC = [CONF['lobby']['threat_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 
+TIME_SLC = [CONF['loot']['time_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
+
 TOKEN_SLC = [CONF['loot']['token_slice'][x] for x in ['height_start','height_end','width_start','width_end']]
 TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{SCRN_WDT}_{SCRN_HGT}_token.png', 0)
 

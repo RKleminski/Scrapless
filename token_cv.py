@@ -67,6 +67,27 @@ def read_threat_level(screen_grab, slice):
 
 
 '''
+Looks into the specified slice of the screen grab for a numeric record of hunt's completion time.
+'''
+def read_hunt_time(screen_grab, slice):
+
+    # slice off the critical area from full-screen capture
+    image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
+
+    # preprocessing to increase tesseract's ability to read the image
+    # most important here is the upscaling, followed by binarisation and inversion
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+    image_slice = cv2.resize(image_slice, (520, 470))
+    ret, ocr_image = cv2.threshold(image_slice, 250, 255, cv2.THRESH_BINARY)
+    ocr_image = cv2.bitwise_not(ocr_image)
+    
+    # read the hunt time
+    time = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 digits')
+
+    return time if time != '' else 0
+
+
+'''
 Similar to the function for reading the threat level, this one retrieves the full name of
 the behemoth. This allows for some more fine-grained data gathering
 
