@@ -137,23 +137,28 @@ def main():
                 if status == 'ERROR':
                     error_count += 1
                     time.sleep(2)
-
-                # inform user of abandoning the process if retry limit reached
-                if error_count == 10:
-                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.')
-    
+                
                 # handle the situation of defeat
                 if status == 'DEFEAT':
                     stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.')
 
+                # inform user of abandoning the process if retry limit reached
+                if error_count == 10:
+                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.')
+
                 # reset variable on successful form submission or retry limit
-                if status == 'OK' or status == 'DEFEAT' or error_count == 5:
+                if status == 'OK' or status == 'DEFEAT' or error_count == 10 or threat_level == '1':
 
                     threat_level = ''
                     hunt_type = ''
                     behemoth_name = ''
                     valid_hunt = False
                     error_count = 0
+
+                # pause for a bit in the event of a low-threat hunt
+                if threat_level == '1':
+                    stng.LOG.info('INFO: Insufficient threat level detected. Data will not be collected.')
+                    time.sleep(30)
 
         # log any exceptions encountered by the program
         except Exception:
