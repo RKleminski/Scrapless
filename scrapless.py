@@ -116,7 +116,8 @@ def main():
             time.sleep(1)
 
             # capture the current state of the screen
-            screen_grab = region_grabber(stng.SCRN_REG)
+            screen_grab = pyautogui.screenshot(region=stng.SCRN_REG) #region_grabber(stng.SCRN_REG)
+            cv2.imwrite('./test_screen_grab.png', np.array(screen_grab))
 
 
             # search for new hunt details only if current are invalid

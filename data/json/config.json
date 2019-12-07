@@ -10,8 +10,8 @@
   "screen":{
     "x_offset":0,
     "y_offset":0,
-    "width":1920,
-    "height":1080
+    "width":1680,
+    "height":1050
   },
   "lobby":{
     "behemoth_slice":{

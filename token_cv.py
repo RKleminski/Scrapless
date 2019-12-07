@@ -31,6 +31,9 @@ def detect_element(screen_grab, slice, target, prec=0.8):
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
 
+    cv2.imwrite('./test_element_detect.png', image_slice)
+    cv2.imwrite('./test_element_target.png', target)
+
     res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     
@@ -55,7 +58,13 @@ def read_threat_level(screen_grab, slice):
     # preprocessing to increase tesseract's ability to read the image
     # most important here is the upscaling, followed by binarisation and inversion
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
-    image_slice = cv2.resize(image_slice, (520, 470))
+    
+    width = int(image_slice.shape[1] * 10)
+    height = int(image_slice.shape[0] * 10)
+    dim = (width, height)
+
+    image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
+    
     ret, ocr_image = cv2.threshold(image_slice, 250, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
     

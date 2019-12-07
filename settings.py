@@ -111,63 +111,70 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
 #
 # OTHER CONSTANTS
 #
-BHMT_LOBBY_SLC = [CONF['lobby']['behemoth_slice']['height_start'] * Y_SCALE,
-                  CONF['lobby']['behemoth_slice']['height_end'] * Y_SCALE,
-                  CONF['lobby']['behemoth_slice']['width_start'] * X_SCALE,
-                  CONF['lobby']['behemoth_slice']['width_end'] * X_SCALE]
+BHMT_LOBBY_SLC = [int(CONF['lobby']['behemoth_slice']['height_start'] * Y_SCALE),
+                  int(CONF['lobby']['behemoth_slice']['height_end'] * Y_SCALE),
+                  int(CONF['lobby']['behemoth_slice']['width_start'] * X_SCALE),
+                  int(CONF['lobby']['behemoth_slice']['width_end'] * X_SCALE)]
 
-BHMT_LOOT_SLC = [CONF['loot']['behemoth_slice']['height_start'] * Y_SCALE,
-                 CONF['loot']['behemoth_slice']['height_end'] * Y_SCALE,
-                 CONF['loot']['behemoth_slice']['width_start'] * X_SCALE,
-                 CONF['loot']['behemoth_slice']['width_end'] * X_SCALE]
+BHMT_LOOT_SLC = [int(CONF['loot']['behemoth_slice']['height_start'] * Y_SCALE),
+                 int(CONF['loot']['behemoth_slice']['height_end'] * Y_SCALE),
+                 int(CONF['loot']['behemoth_slice']['width_start'] * X_SCALE),
+                 int(CONF['loot']['behemoth_slice']['width_end'] * X_SCALE)]
 
 GAME_VER = get_patch_version()
 
-LOBBY_SLC = [CONF['lobby']['slice']['height_start'] * Y_SCALE,
-             CONF['lobby']['slice']['height_end'] * Y_SCALE,
-             CONF['lobby']['slice']['width_start'] * X_SCALE,
-             CONF['lobby']['slice']['width_end'] * X_SCALE]
+LOBBY_SLC = [int(CONF['lobby']['slice']['height_start'] * Y_SCALE),
+             int(CONF['lobby']['slice']['height_end'] * Y_SCALE),
+             int(CONF['lobby']['slice']['width_start'] * X_SCALE),
+             int(CONF['lobby']['slice']['width_end'] * X_SCALE)]
 
-LOBBY_IMG = cv2.imread(f'./data/images/targets/lobby_screen/{SCRN_WDT}_{SCRN_HGT}_lobby.png', 0)
+LOBBY_IMG = cv2.imread(f'./data/images/targets/lobby_screen/lobby.png', 0)
+new_size = ( int(LOBBY_IMG.shape[1] * X_SCALE),  int(LOBBY_IMG.shape[0] * Y_SCALE))
+LOBBY_IMG = cv2.resize(LOBBY_IMG, new_size)
 
 LOG = get_logger()
 
-LOOT_SLC = [CONF['loot']['slice']['height_start'] * Y_SCALE,
-            CONF['loot']['slice']['height_end'] * Y_SCALE,
-            CONF['loot']['slice']['width_start'] * X_SCALE,
-            CONF['loot']['slice']['width_end'] * X_SCALE]
+LOOT_SLC = [int(CONF['loot']['slice']['height_start'] * Y_SCALE),
+            int(CONF['loot']['slice']['height_end'] * Y_SCALE),
+            int(CONF['loot']['slice']['width_start'] * X_SCALE),
+            int(CONF['loot']['slice']['width_end'] * X_SCALE)]
 
-LOOT_IMG =  cv2.imread(f'./data/images/targets/loot_screen/{SCRN_WDT}_{SCRN_HGT}_loot.png', 0)
+LOOT_IMG =  cv2.imread(f'./data/images/targets/loot_screen/loot.png', 0)
+new_size = ( int(LOOT_IMG.shape[1] * X_SCALE),  int(LOOT_IMG.shape[0] * Y_SCALE))
+LOOT_IMG = cv2.resize(LOOT_IMG, new_size)
 
-HTYPE_SLC = [CONF['lobby']['hunt_type_slice']['height_start'] * Y_SCALE,
-             CONF['lobby']['hunt_type_slice']['height_end'] * Y_SCALE,
-             CONF['lobby']['hunt_type_slice']['width_start'] * X_SCALE,
-             CONF['lobby']['hunt_type_slice']['width_end'] * X_SCALE]
+HTYPE_SLC = [int(CONF['lobby']['hunt_type_slice']['height_start'] * Y_SCALE),
+             int(CONF['lobby']['hunt_type_slice']['height_end'] * Y_SCALE),
+             int(CONF['lobby']['hunt_type_slice']['width_start'] * X_SCALE),
+             int(CONF['lobby']['hunt_type_slice']['width_end'] * X_SCALE)]
 
-HTYPE_IMG = cv2.imread(f'./data/images/targets/patrol_screen/{SCRN_WDT}_{SCRN_HGT}_patrol.png', 0)
+HTYPE_IMG = cv2.imread(f'./data/images/targets/patrol_screen/patrol.png', 0)
+new_size = ( int(HTYPE_IMG.shape[1] * X_SCALE),  int(HTYPE_IMG.shape[0] * Y_SCALE))
+HTYPE_IMG = cv2.resize(HTYPE_IMG, new_size)
 
 USER = CONF['user']['name'] if CONF['user']['name'] != "" else user_init()
 
 TESS_PTH = CONF['paths']['tesseract']
 TESS_CONF = CONF['paths']['tesseract_conf']
 
-THRT_SLC = [CONF['lobby']['threat_slice']['height_start'] * Y_SCALE,
-            CONF['lobby']['threat_slice']['height_end'] * Y_SCALE,
-            CONF['lobby']['threat_slice']['width_start'] * X_SCALE,
-            CONF['lobby']['threat_slice']['width_end'] * X_SCALE]
+THRT_SLC = [int(CONF['lobby']['threat_slice']['height_start'] * Y_SCALE),
+            int(CONF['lobby']['threat_slice']['height_end'] * Y_SCALE),
+            int(CONF['lobby']['threat_slice']['width_start'] * X_SCALE),
+            int(CONF['lobby']['threat_slice']['width_end'] * X_SCALE)]
 
-TIME_SLC = [CONF['loot']['time_slice']['height_start'] * Y_SCALE,
-            CONF['loot']['time_slice']['height_end'] * Y_SCALE,
-            CONF['loot']['time_slice']['width_start'] * X_SCALE,
-            CONF['loot']['time_slice']['width_end'] * X_SCALE]
+TIME_SLC = [int(CONF['loot']['time_slice']['height_start'] * Y_SCALE),
+            int(CONF['loot']['time_slice']['height_end'] * Y_SCALE),
+            int(CONF['loot']['time_slice']['width_start'] * X_SCALE),
+            int(CONF['loot']['time_slice']['width_end'] * X_SCALE)]
 
-TOKEN_SLC = [CONF['loot']['token_slice']['height_start'] * Y_SCALE,
-             CONF['loot']['token_slice']['height_end'] * Y_SCALE,
-             CONF['loot']['token_slice']['width_start'] * X_SCALE,
-             CONF['loot']['token_slice']['width_end'] * X_SCALE]
+TOKEN_SLC = [int(CONF['loot']['token_slice']['height_start'] * Y_SCALE),
+             int(CONF['loot']['token_slice']['height_end'] * Y_SCALE),
+             int(CONF['loot']['token_slice']['width_start'] * X_SCALE),
+             int(CONF['loot']['token_slice']['width_end'] * X_SCALE)]
 
-TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{SCRN_WDT}_{SCRN_HGT}_token.png', 0)
-
+TOKEN_IMG = cv2.imread(f'./data/images/targets/token/token.png', 0)
+new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE),  int(TOKEN_IMG.shape[0] * Y_SCALE))
+TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
 
 
 
