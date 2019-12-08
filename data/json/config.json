@@ -10,59 +10,7 @@
   "screen":{
     "x_offset":0,
     "y_offset":0,
-    "width":1680,
-    "height":1050
-  },
-  "lobby":{
-    "behemoth_slice":{
-      "height_start":140,
-      "height_end":180,
-      "width_start":1455,
-      "width_end":1850
-    },
-    "slice":{
-      "height_start":835,
-      "height_end":885,
-      "width_start":1350,
-      "width_end":1860
-    },
-    "threat_slice":{
-      "height_start":215,
-      "height_end":255,
-      "width_start":1465,
-      "width_end":1505
-    },
-    "hunt_type_slice":{
-      "height_start":990,
-      "height_end":1045,
-      "width_start":775,
-      "width_end":1145
-    }
-  },
-  "loot": {
-    "behemoth_slice":{
-      "height_start":20,
-      "height_end":50,
-      "width_start":95,
-      "width_end":450
-    },
-    "slice":{
-      "height_start":45,
-      "height_end":205,
-      "width_start":345,
-      "width_end":675
-    },
-    "time_slice":{
-      "height_start":47,
-      "height_end":72,
-      "width_start":220,
-      "width_end":405
-    },    
-    "token_slice":{
-      "height_start":265,
-      "height_end":850,
-      "width_start":95,
-      "width_end":490
-    }
+    "width":1920,
+    "height":1080
   }
 }

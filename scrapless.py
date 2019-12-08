@@ -61,8 +61,8 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
         if behemoth_name == loot_behemoth_name:
 
             # send data to Forms
-            #fill_basic_form(if_drop, hunt_tier, stng.GAME_VER)
-            #fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, stng.GAME_VER, stng.USER)
+            fill_basic_form(if_drop, hunt_tier, stng.GAME_VER)
+            fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, stng.GAME_VER, stng.USER)
 
             # open log file
             stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}')
@@ -116,9 +116,7 @@ def main():
             time.sleep(1)
 
             # capture the current state of the screen
-            screen_grab = pyautogui.screenshot(region=stng.SCRN_REG) #region_grabber(stng.SCRN_REG)
-            cv2.imwrite('./test_screen_grab.png', np.array(screen_grab))
-
+            screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
 
             # search for new hunt details only if current are invalid
             if not valid_hunt:
