@@ -14,9 +14,9 @@
         },
         "threat_slice":{
             "height_start":215,
-            "height_end":255,
-            "width_start":1465,
-            "width_end":1505
+            "height_end":250,
+            "width_start":1463,
+            "width_end":1508
         },
         "hunt_type_slice":{
             "height_start":990,

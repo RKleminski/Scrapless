@@ -65,7 +65,7 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
             fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, stng.GAME_VER, stng.USER)
 
             # open log file
-            stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}')
+            stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}\n')
 
             return 'OK'
         elif loot_behemoth_name == 'Defeated':
@@ -139,11 +139,11 @@ def main():
 
                 # inform user of abandoning the process if retry limit reached
                 if error_count == 10:
-                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.')
+                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
     
                 # handle the situation of defeat
                 if status == 'DEFEAT':
-                    stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.')
+                    stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')
 
                 # reset variable on successful form submission or retry limit
                 if status == 'OK' or status == 'DEFEAT' or error_count == 5:

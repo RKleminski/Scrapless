@@ -87,6 +87,8 @@ SCRN_REG = tuple([CONF['screen'][x] for x in ['x_offset','y_offset','width','hei
 SCRN_WDT = CONF['screen']['width']
 SCRN_HGT = CONF['screen']['height']
 
+Y_SCALE = 1
+X_SCALE = 1
 
 A_RATIO = ''
 if SCRN_WDT/SCRN_HGT == 16/10:

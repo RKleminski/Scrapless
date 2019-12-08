@@ -30,10 +30,7 @@ def detect_element(screen_grab, slice, target, prec=0.8):
     # slice off the critical area from full-screen capture
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
-
-    cv2.imwrite('./test_detect.png', image_slice)
-    cv2.imwrite('./test_target.png', target)
-
+    
     res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     
@@ -67,8 +64,6 @@ def read_threat_level(screen_grab, slice):
     
     ret, ocr_image = cv2.threshold(image_slice, 254, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
-    
-    cv2.imwrite('./test_ocr.png', ocr_image)
 
     # read the threat level
     threat = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 digits')
