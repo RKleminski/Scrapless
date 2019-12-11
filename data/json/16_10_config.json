@@ -1,36 +1,36 @@
 {
     "lobby":{
         "behemoth_slice":{
-            "height_start":135,
-            "height_end":175,
-            "width_start":1230,
-            "width_end":1620
+            "height_start":185,
+            "height_end":220,
+            "width_start":1290,
+            "width_end":1635
         },
         "slice":{
-            "height_start":810,
-            "height_end":860,
-            "width_start":1126,
-            "width_end":1618
+            "height_start":840,
+            "height_end":890,
+            "width_start":1260,
+            "width_end":1565
         },
         "threat_slice":{
-            "height_start":210,
-            "height_end":245,
-            "width_start":1235,
-            "width_end":1280
+            "height_start":255,
+            "height_end":290,
+            "width_start":1301,
+            "width_end":1346
         },
         "hunt_type_slice":{
             "height_start":965,
-            "height_end":1115,
-            "width_start":635,
-            "width_end":1110
+            "height_end":1015,
+            "width_start":605,
+            "width_end":1080
         }
     },
     "loot": {
         "behemoth_slice":{
-            "height_start":20,
-            "height_end":50,
+            "height_start":5,
+            "height_end":45,
             "width_start":95,
-            "width_end":450
+            "width_end":590
         },
         "slice":{
             "height_start":45,
@@ -45,10 +45,10 @@
             "width_end":390
         },    
         "token_slice":{
-            "height_start":270,
-            "height_end":902,
-            "width_start":95,
-            "width_end":431
+            "height_start":265,
+            "height_end":870,
+            "width_start":92,
+            "width_end":157
         }
     }
 }
