@@ -13,9 +13,9 @@
             "width_end":1780
         },
         "threat_slice":{
-            "height_start":262,
-            "height_end":296,
-            "width_start":1489,
+            "height_start":263,
+            "height_end":298,
+            "width_start":1490,
             "width_end":1535
         },
         "hunt_type_slice":{
@@ -47,8 +47,8 @@
         "token_slice":{
             "height_start":274,
             "height_end":899,
-            "width_start":95,
-            "width_end":160
+            "width_start":90,
+            "width_end":165
         }
     }
 }

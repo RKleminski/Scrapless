@@ -2,6 +2,7 @@ import time
 import pytesseract
 import settings as stng
 
+from fuzzywuzzy import fuzz, process
 from token_cv import *
 from utils import *
 from forms import *
@@ -26,8 +27,9 @@ def lobby_reader(screen_grab):
         hunt_type = 'Patrol' if detect_element(screen_grab, stng.HTYPE_SLC, stng.HTYPE_IMG) else 'Pursuit'
 
         # determine behemoth name
-        behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
+        behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, tess_config=stng.TESS_CONF)
         behemoth_name = trim_behemoth_name(behemoth_name)
+        behemoth_name = fuzzy_behemoth(behemoth_name)
 
         # inform user if retrieved hunt details are invalid
         if not verify_hunt(threat_level, behemoth_name):
@@ -55,9 +57,18 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
         # determine hunt category
         hunt_tier = get_hunt_tier(threat_level)
 
-        loot_behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, tess_config=stng.TESS_CONF)
+        # read the behemoth name on screen
+        loot_behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, inverse=True, tess_config=stng.TESS_CONF)
         loot_behemoth_name = trim_behemoth_name(loot_behemoth_name)
 
+        # finish early if the party has been defeated 
+        if loot_behemoth_name == 'Defeated':
+            return 'DEFEAT'
+
+        # fuzzy match behemoth name to account for small OCR errors
+        loot_behemoth_name = fuzzy_behemoth(loot_behemoth_name)
+
+        # check for expected behemoth name and progress accordingly
         if behemoth_name == loot_behemoth_name:
 
             # send data to Forms
@@ -68,8 +79,6 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
             stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}\n')
 
             return 'OK'
-        elif loot_behemoth_name == 'Defeated':
-            return 'DEFEAT'
         else:
             stng.LOG.info(f'WARNING: Expected behemoth {behemoth_name} but found {loot_behemoth_name}. Retrying...')
             return 'ERROR'
@@ -89,6 +98,20 @@ def verify_hunt(threat_level, behemoth_name):
     
     return False
     
+
+'''
+When proivided with a behemoth name, returns the closes fuzzy match from the list
+of valid behemoth names, or empty string if the best match does not score high enough ratio
+similarity to the found name.
+'''
+def fuzzy_behemoth(behemoth_name):
+
+    if behemoth_name in stng.HUNT.keys():
+        return behemoth_name
+    else:
+        match = process.extractOne(behemoth_name, stng.HUNT.keys(), scorer=fuzz.ratio, score_cutoff=80)
+        return '' if match is None else match[0]
+
 
 '''
 Bread and butter of the program, running in a loop to continously
@@ -138,15 +161,20 @@ def main():
                     time.sleep(2)
 
                 # inform user of abandoning the process if retry limit reached
-                if error_count == 10:
+                if error_count == 5:
                     stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
     
                 # handle the situation of defeat
                 if status == 'DEFEAT':
                     stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')
 
+                # pause for a bit in the event of a low-threat hunt
+                if threat_level == '1':
+                    stng.LOG.info('INFO: Insufficient threat level detected. Data will not be collected.')
+                    time.sleep(30)
+
                 # reset variable on successful form submission or retry limit
-                if status == 'OK' or status == 'DEFEAT' or error_count == 5:
+                if status == 'OK' or status == 'DEFEAT' or error_count == 5 or threat_level == '1':
 
                     threat_level = ''
                     hunt_type = ''

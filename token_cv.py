@@ -56,17 +56,17 @@ def read_threat_level(screen_grab, slice):
     # most important here is the upscaling, followed by binarisation and inversion
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
     
-    width = int(image_slice.shape[1] * 10)
-    height = int(image_slice.shape[0] * 10)
+    width = int(image_slice.shape[1] * 14)
+    height = int(image_slice.shape[0] * 15)
     dim = (width, height)
 
-    image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
+    ocr_image = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
     
-    ret, ocr_image = cv2.threshold(image_slice, 254, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(ocr_image, 254, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
 
     # read the threat level
-    threat = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 digits')
+    threat = pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=0123456789')
 
     # return the threat level
     return threat if threat != '' else 0
@@ -88,7 +88,7 @@ def read_hunt_time(screen_grab, slice):
     ocr_image = cv2.bitwise_not(ocr_image)
     
     # read the hunt time
-    time = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 digits')
+    time = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 -c tessedit_char_whitelist=0123456789:.')
 
     return time if time != '' else 0
 
@@ -110,11 +110,21 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     # slice off the critical area from full-screen capture 
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
 
-    # thresholding to increase tesseract's ability to read the image
-    ret, ocr_image = cv2.threshold(image_slice, 100, 255, cv2.THRESH_BINARY_INV)
+    # convert to grayscale
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
 
+    # determine resize dimensions
+    width = int(image_slice.shape[1] * 5)
+    height = int(image_slice.shape[0] * 5)
+    dim = (width, height)
+
+    # resize
+    ocr_image = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
+
+    # thresholding to increase tesseract's ability to read the image
     if inverse:
         ocr_image = cv2.bitwise_not(ocr_image)
+    ret, ocr_image = cv2.threshold(ocr_image, 65, 255, cv2.THRESH_BINARY)
 
     # read the behemoth name
     name = pytesseract.image_to_string(ocr_image, config=tess_config)

@@ -13,7 +13,7 @@ info and error messages
 def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%S',
                LOG_NAME = '',
                LOG_FILE_INFO  = f'./logs/{datetime.today().date()}_scrapless.log',
-               LOG_FILE_ERROR = f'./error_logs/{datetime.now().strftime("%d-%m-%d_%H-%M-%S")}_scrapless.err'):
+               LOG_FILE_ERROR = f'./error_logs/{datetime.today().date()}_scrapless.err'):
     
     log = logging.getLogger(LOG_NAME)
     log_formatter = logging.Formatter(LOG_FORMAT)
@@ -235,6 +235,4 @@ TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{A_RATIO_PATH}_token.png', 
 new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE),  int(TOKEN_IMG.shape[0] * Y_SCALE))
 TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
 
-LOG.info('SETUP: Region and target data read successfully.')
-
-print('\n')
+LOG.info('SETUP: Region and target data read successfully.\n')

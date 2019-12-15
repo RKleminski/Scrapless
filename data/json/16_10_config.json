@@ -28,7 +28,7 @@
     "loot": {
         "behemoth_slice":{
             "height_start":5,
-            "height_end":45,
+            "height_end":50,
             "width_start":95,
             "width_end":590
         },
@@ -47,8 +47,8 @@
         "token_slice":{
             "height_start":265,
             "height_end":870,
-            "width_start":92,
-            "width_end":157
+            "width_start":85,
+            "width_end":160
         }
     }
 }
