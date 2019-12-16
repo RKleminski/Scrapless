@@ -184,6 +184,11 @@ BHMT_LOOT_SLC = [int(ASP_CONF['loot']['behemoth_slice']['height_start'] * Y_SCAL
                  int(ASP_CONF['loot']['behemoth_slice']['width_start'] * X_SCALE),
                  int(ASP_CONF['loot']['behemoth_slice']['width_end'] * X_SCALE)]
 
+ESC_LOBBY_SLC = [int(ASP_CONF['lobby']['escalation_slice']['height_start'] * Y_SCALE),
+                  int(ASP_CONF['lobby']['escalation_slice']['height_end'] * Y_SCALE),
+                  int(ASP_CONF['lobby']['escalation_slice']['width_start'] * X_SCALE),
+                  int(ASP_CONF['lobby']['escalation_slice']['width_end'] * X_SCALE)]
+
 LOBBY_SLC = [int(ASP_CONF['lobby']['slice']['height_start'] * Y_SCALE),
              int(ASP_CONF['lobby']['slice']['height_end'] * Y_SCALE),
              int(ASP_CONF['lobby']['slice']['width_start'] * X_SCALE),

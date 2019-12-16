@@ -8,6 +8,20 @@ from utils import *
 from forms import *
 
 
+def detect_lobby(screen_grab):
+
+    # determine the hunt only if we see the lobby
+    if detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG):
+
+        # check if escalation
+        escalation_level = read_escalation_level(screen_grab, stng.ESC_LOBBY_SLC)
+        escalation_level = process.extractOne(escalation_level, ['Escalation 1-13', 'Escalation 10-50'], scorer=fuzz.ratio, score_cutoff=90)
+
+        if escalation_level != None:
+            return 'ESCALATION', escalation_level[0]
+        else:
+            return 'HUNT', ''
+
 '''
 Helper function which wraps all the lobby image detection and OCR under one name, 
 to clean up the main file code a little
@@ -155,38 +169,40 @@ def main():
                 # process loot screen visual data
                 status = loot_reader(screen_grab, threat_level, hunt_type, behemoth_name)
 
-                # if an error has been detected, increment error counter
-                if status == 'ERROR':
-                    error_count += 1
-                    time.sleep(2)
+                # save some processing time by avoiding unnecessary ifs early
+                if status != 'NO_SCREEN':
 
-                # inform user of abandoning the process if retry limit reached
-                if error_count == 5:
-                    stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
-    
-                # handle the situation of defeat
-                if status == 'DEFEAT':
-                    stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')
+                    # if an error has been detected, increment error counter
+                    if status == 'ERROR':
+                        error_count += 1
+                        time.sleep(2)
 
-                # pause for a bit in the event of a low-threat hunt
-                if threat_level == '1':
-                    stng.LOG.info('INFO: Insufficient threat level detected. Data will not be collected.')
-                    time.sleep(30)
+                    # inform user of abandoning the process if retry limit reached
+                    if error_count == 5:
+                        stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
+        
+                    # handle the situation of defeat
+                    if status == 'DEFEAT':
+                        stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')
 
-                # reset variable on successful form submission or retry limit
-                if status == 'OK' or status == 'DEFEAT' or error_count == 5 or threat_level == '1':
+                    # pause for a bit in the event of a low-threat hunt
+                    if threat_level == '1':
+                        stng.LOG.info('INFO: Insufficient threat level detected. Data will not be collected.')
+                        time.sleep(30)
 
-                    threat_level = ''
-                    hunt_type = ''
-                    behemoth_name = ''
-                    valid_hunt = False
-                    error_count = 0
+                    # reset variable on successful form submission or retry limit
+                    if status == 'OK' or status == 'DEFEAT' or error_count == 5 or threat_level == '1':
+
+                        threat_level = ''
+                        hunt_type = ''
+                        behemoth_name = ''
+                        valid_hunt = False
+                        error_count = 0
 
         # log any exceptions encountered by the program
         except Exception:
 
             stng.LOG.exception('An exception has occured: ')
-
 
 '''
 Standard stuff, run main function if running the file

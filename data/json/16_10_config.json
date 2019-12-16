@@ -39,10 +39,10 @@
             "width_end":609
         },
         "time_slice":{
-            "height_start":45,
-            "height_end":70,
+            "height_start":55,
+            "height_end":75,
             "width_start":210,
-            "width_end":390
+            "width_end":290
         },    
         "token_slice":{
             "height_start":265,
