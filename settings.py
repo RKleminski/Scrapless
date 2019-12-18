@@ -184,10 +184,26 @@ BHMT_LOOT_SLC = [int(ASP_CONF['loot']['behemoth_slice']['height_start'] * Y_SCAL
                  int(ASP_CONF['loot']['behemoth_slice']['width_start'] * X_SCALE),
                  int(ASP_CONF['loot']['behemoth_slice']['width_end'] * X_SCALE)]
 
-ESC_LOBBY_SLC = [int(ASP_CONF['lobby']['escalation_slice']['height_start'] * Y_SCALE),
-                  int(ASP_CONF['lobby']['escalation_slice']['height_end'] * Y_SCALE),
-                  int(ASP_CONF['lobby']['escalation_slice']['width_start'] * X_SCALE),
-                  int(ASP_CONF['lobby']['escalation_slice']['width_end'] * X_SCALE)]
+ESCAL_LOBBY_SLC = [int(ASP_CONF['escalation']['lobby_slice']['height_start'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['lobby_slice']['height_end'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['lobby_slice']['width_start'] * X_SCALE),
+                  int(ASP_CONF['escalation']['lobby_slice']['width_end'] * X_SCALE)]
+
+ESCAL_RANK_SLC = [int(ASP_CONF['escalation']['rank_slice']['height_start'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['rank_slice']['height_end'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['rank_slice']['width_start'] * X_SCALE),
+                  int(ASP_CONF['escalation']['rank_slice']['width_end'] * X_SCALE)]
+
+ESCAL_SUMM_SLC = [int(ASP_CONF['escalation']['summary_slice']['height_start'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['summary_slice']['height_end'] * Y_SCALE),
+                  int(ASP_CONF['escalation']['summary_slice']['width_start'] * X_SCALE),
+                  int(ASP_CONF['escalation']['summary_slice']['width_end'] * X_SCALE)]
+
+
+ESCAL_SUMM_IMG = cv2.imread(f'./data/images/targets/esc_summary/{A_RATIO_PATH}_esc_summary.png', 0)
+new_size = ( int(ESCAL_SUMM_IMG.shape[1] * X_SCALE),  int(ESCAL_SUMM_IMG.shape[0] * Y_SCALE))
+ESCAL_SUMM_IMG = cv2.resize(ESCAL_SUMM_IMG, new_size)
+
 
 LOBBY_SLC = [int(ASP_CONF['lobby']['slice']['height_start'] * Y_SCALE),
              int(ASP_CONF['lobby']['slice']['height_end'] * Y_SCALE),

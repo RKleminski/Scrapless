@@ -8,19 +8,33 @@ from utils import *
 from forms import *
 
 
-def detect_lobby(screen_grab):
+'''
+Detects the lobby and determines the type of a lobby the player is currently in
+Additionally returns the name of the "target"
+'''
+def lobby_detect(screen_grab):
 
     # determine the hunt only if we see the lobby
     if detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG):
 
-        # check if escalation
-        escalation_level = read_escalation_level(screen_grab, stng.ESC_LOBBY_SLC)
-        escalation_level = process.extractOne(escalation_level, ['Escalation 1-13', 'Escalation 10-50'], scorer=fuzz.ratio, score_cutoff=90)
+        # check if escalation lobby
+        escalation_level = read_escalation_level(screen_grab, stng.ESCAL_LOBBY_SLC)
 
-        if escalation_level != None:
-            return 'ESCALATION', escalation_level[0]
-        else:
-            return 'HUNT', ''
+        if escalation_level != '':
+            escalation_level = process.extractOne(escalation_level, ['Escalation 1-13', 'Escalation 10-50'], scorer=fuzz.ratio, score_cutoff=90)
+
+            # return escalation mode and name
+            if escalation_level != None:
+                return 'ESCAL', escalation_level[0]
+
+        # determine behemoth name if method didn't exit with escalation level
+        behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, tess_config=stng.TESS_CONF)
+        behemoth_name = trim_behemoth_name(behemoth_name)
+        behemoth_name = fuzzy_behemoth(behemoth_name)
+
+        return 'HUNT', behemoth_name
+
+    return 'RAMSGATE', ''
 
 '''
 Helper function which wraps all the lobby image detection and OCR under one name, 
@@ -28,31 +42,24 @@ to clean up the main file code a little
 '''
 def lobby_reader(screen_grab):
 
-    threat_level = -1
-    hunt_type = ''
-    behemoth_name = ''
+    # read threat level and hunt type
+    threat_level = read_threat_level(screen_grab, stng.THRT_SLC)
+    hunt_type = 'Patrol' if detect_element(screen_grab, stng.HTYPE_SLC, stng.HTYPE_IMG) else 'Pursuit'
+
+    return threat_level, hunt_type
+
+'''
+Detects if the loot screen is visible, and returns appropriate program mode if so
+Otherwise, returns the old mode, so program continues operation
+'''
+def loot_detect(screen_grab, program_mode):
+
+    # proceed further only if loot screen is detected
+    if detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
+        return 'LOOT_SCREEN'
     
-    # determine the hunt only if we see the lobby
-    if detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG):
-
-        stng.LOG.info('Lobby detected, processing...')
-
-        threat_level = read_threat_level(screen_grab, stng.THRT_SLC)
-        hunt_type = 'Patrol' if detect_element(screen_grab, stng.HTYPE_SLC, stng.HTYPE_IMG) else 'Pursuit'
-
-        # determine behemoth name
-        behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, tess_config=stng.TESS_CONF)
-        behemoth_name = trim_behemoth_name(behemoth_name)
-        behemoth_name = fuzzy_behemoth(behemoth_name)
-
-        # inform user if retrieved hunt details are invalid
-        if not verify_hunt(threat_level, behemoth_name):
-            stng.LOG.info(f'Invalid hunt detected: {behemoth_name} T{threat_level} {hunt_type}, retrying...')
-        else:
-            stng.LOG.info(f'Valid hunt detected: {behemoth_name} T{threat_level} {hunt_type}, awaiting loot screen...')
-
-    return threat_level, hunt_type, behemoth_name
-
+    else:
+        return program_mode
 
 '''
 Helper function which wraps all the loot image detection and OCR under one name,
@@ -60,51 +67,64 @@ to clean up the main file code a little
 '''
 def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
 
-    # proceed further only if loot screen is detected
-    if detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
+    # determine if we had a token drop
+    if_drop = 'Yes' if detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
 
-        stng.LOG.info(f'Loot screen detected, processing...')
+    # determine hunt category
+    hunt_tier = get_hunt_tier(threat_level)
 
-        # determine if we had a token drop
-        if_drop = 'Yes' if detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
+    # read the behemoth name on screen
+    loot_behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, inverse=True, tess_config=stng.TESS_CONF)
+    loot_behemoth_name = trim_behemoth_name(loot_behemoth_name)
 
-        # determine hunt category
-        hunt_tier = get_hunt_tier(threat_level)
+    # finish early if the party has been defeated 
+    if loot_behemoth_name == 'Defeated':
+        return 'DEFEAT', {}
 
-        # read the behemoth name on screen
-        loot_behemoth_name = read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, inverse=True, tess_config=stng.TESS_CONF)
-        loot_behemoth_name = trim_behemoth_name(loot_behemoth_name)
+    # fuzzy match behemoth name to account for small OCR errors
+    loot_behemoth_name = fuzzy_behemoth(loot_behemoth_name)
 
-        # finish early if the party has been defeated 
-        if loot_behemoth_name == 'Defeated':
-            return 'DEFEAT'
+    # check for expected behemoth name and progress accordingly
+    if behemoth_name == loot_behemoth_name:
+        
+        loot_data = {
+            'drop': if_drop,
+            'hunt_type': hunt_type,
+            'hunt_tier': hunt_tier,
+            'threat_level': threat_level,
+            'behemoth_name': behemoth_name,
+            'patch_ver': stng.GAME_VER,
+            'user': stng.USER
+        }
 
-        # fuzzy match behemoth name to account for small OCR errors
-        loot_behemoth_name = fuzzy_behemoth(loot_behemoth_name)
+        return 'OK', loot_data
+    else:
+        return 'ERROR', {'lobby_behemoth': behemoth_name, 'loot_behemoth': loot_behemoth_name}
 
-        # check for expected behemoth name and progress accordingly
-        if behemoth_name == loot_behemoth_name:
+'''
+Processes loot data from escalation loot screen
+and returns appropriate status once done
+'''
+def escal_loot_reader(screen_grab, escalation_tier):
+    
+    # determine if we had a token drop
+    if_drop = 'Yes' if detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9) else 'No'
 
-            # send data to Forms
-            fill_basic_form(if_drop, hunt_tier, stng.GAME_VER)
-            fill_rich_form(if_drop, hunt_type, hunt_tier, threat_level, behemoth_name, stng.GAME_VER, stng.USER)
+        
+    loot_data = {
+        'drop': if_drop,
+        'hunt_tier': escalation_tier,
+        'patch_ver': stng.GAME_VER,
+        'user': stng.USER
+    }
 
-            # open log file
-            stng.LOG.info(f'Submitted data: {if_drop} - {hunt_type} - {hunt_tier} - {threat_level} - {behemoth_name} - {stng.GAME_VER} - {stng.USER}\n')
-
-            return 'OK'
-        else:
-            stng.LOG.info(f'WARNING: Expected behemoth {behemoth_name} but found {loot_behemoth_name}. Retrying...')
-            return 'ERROR'
-
-    return 'NO_SCREEN'
-
+    return 'OK', loot_data
 
 '''
 When provided with threat level and a behemoth name, the function will return
 a boolean value determining if these parametres are those of a valid hunt
 '''
-def verify_hunt(threat_level, behemoth_name):
+def validate_hunt(threat_level, behemoth_name):
 
     if behemoth_name in stng.HUNT.keys():
         if threat_level in stng.HUNT[behemoth_name]:
@@ -137,12 +157,8 @@ def main():
     # configure tesseract path
     pytesseract.pytesseract.tesseract_cmd = stng.TESS_PTH
 
-    # store lobby variables
-    threat_level = ''
-    hunt_type = ''
-    behemoth_name = ''
-    valid_hunt = False
-    error_count = 0
+    # variable to control the current operations of the program
+    program_mode = 'RAMSGATE'
 
     # work in the loop of image recognition
     while True:
@@ -152,56 +168,137 @@ def main():
             # pause between captures
             time.sleep(1)
 
+
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
 
-            # search for new hunt details only if current are invalid
-            if not valid_hunt:
 
-                # process lobby visual data
-                threat_level, hunt_type, behemoth_name = lobby_reader(screen_grab) 
-                valid_hunt = verify_hunt(threat_level, behemoth_name)
+            # read for lobby screen if last seen in ramsgate
+            if program_mode == 'RAMSGATE':
+                error_count = 0
+                program_mode, target_name = lobby_detect(screen_grab)
+
+                # if Escalation detected, wait for results screen
+                if program_mode == 'ESCAL':
+                    stng.LOG.info(f'{target_name} lobby detected, awaiting result screen...')
+                    program_mode = 'IN_ESCAL'
+                
+                # if Hunt detected, proceed to read lobby further
+                elif program_mode == 'HUNT':
+
+                    stng.LOG.info('Hunt lobby detected, reading...')
+                    threat_level, hunt_type = lobby_reader(screen_grab)
+
+                    # inform user if retrieved hunt details are invalid
+                    if validate_hunt(threat_level, target_name):
+                        stng.LOG.info(f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...')
+                        program_mode = 'IN_HUNT'
+                    else:
+                        stng.LOG.info(f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...')
+                        program_mode = 'RAMSGATE'
 
 
-            # only attempt detecting loot if hunt is valid
-            if valid_hunt:
+            # await loot screen if currently in a regular hunt
+            elif program_mode == 'IN_HUNT':
+                program_mode = loot_detect(screen_grab, program_mode)
 
-                # process loot screen visual data
-                status = loot_reader(screen_grab, threat_level, hunt_type, behemoth_name)
+                # read loot screen if available
+                if program_mode == 'LOOT_SCREEN':
+                    stng.LOG.info(f'Loot screen detected, processing...')
+                    loot_status, loot_data = loot_reader(screen_grab, threat_level, hunt_type, target_name)
 
-                # save some processing time by avoiding unnecessary ifs early
-                if status != 'NO_SCREEN':
+                    # accept defeat and reset program mode
+                    if loot_status == 'DEFEAT':
+                        stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')  
+                        program_mode = 'RAMSGATE'
 
-                    # if an error has been detected, increment error counter
-                    if status == 'ERROR':
+                    # otherwise, if everything is fine, submit data
+                    elif loot_status == 'OK':
+
+                        if loot_data['threat_level'] == 1:
+                            stng.LOG.info('INFO: Insufficient threat level detected. Data will not be submitted.')
+                            program_mode = 'RAMSGATE'
+
+                        elif loot_data['threat_level'] > 1:
+                            fill_basic_form(loot_data)
+                            fill_rich_form(loot_data)
+                            stng.LOG.info(f'Submitted data: {" - ".join(loot_data.values())}\n')
+                            program_mode = 'RAMSGATE'
+
+                    # otherwise, if error occured, retry
+                    elif loot_status == 'ERROR':
+
+                        # increment error counter
                         error_count += 1
-                        time.sleep(2)
+                        
+                        # inform the user of retrying and loop back if error threshold not reached
+                        if error_count <= 5:
+                            stng.LOG.info(f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...')
+                            program_mode = 'IN_HUNT'
+                            time.sleep(error_count)
+                        elif error_count > 5:
+                            stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
+                            program_mode = 'RAMSGATE'
 
-                    # inform user of abandoning the process if retry limit reached
-                    if error_count == 5:
-                        stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
-        
-                    # handle the situation of defeat
-                    if status == 'DEFEAT':
-                        stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')
 
-                    # pause for a bit in the event of a low-threat hunt
-                    if threat_level == '1':
-                        stng.LOG.info('INFO: Insufficient threat level detected. Data will not be collected.')
-                        time.sleep(30)
+            # await escalation summary screen if during escalation mode
+            elif program_mode == 'IN_ESCAL':
 
-                    # reset variable on successful form submission or retry limit
-                    if status == 'OK' or status == 'DEFEAT' or error_count == 5 or threat_level == '1':
+                # detect escalation summary screen
+                program_mode = 'ESCAL_SUMM' if detect_element(screen_grab, stng.ESCAL_SUMM_SLC, stng.ESCAL_SUMM_IMG) else 'IN_ESCAL'
 
-                        threat_level = ''
-                        hunt_type = ''
-                        behemoth_name = ''
-                        valid_hunt = False
-                        error_count = 0
+
+                # process escalation summary screen
+                if program_mode == 'ESCAL_SUMM':
+                    stng.LOG.info(f'Escalation summary screen detected, processing...')
+
+                    # read rank of final escalation round
+                    escal_rank = read_escalation_rank(screen_grab, stng.ESCAL_RANK_SLC)
+
+                    # if last round was not passed
+                    if escal_rank == '-':
+                        stng.LOG.info('Escalation failed, data will not be submitted.\n')
+
+                    # if valid rank was read
+                    elif escal_rank in ['S', 'A', 'B', 'C', 'D', 'E']:
+                        stng.LOG.info(f'Escalation successful with final round rank {escal_rank}, awaiting loot screen...')
+                        program_mode = 'ESCAL_LOOT'
+
+                    # if invalid rank was read
+                    else:
+
+                        # increment error counter
+                        error_count += 1
+                        
+                        # inform the user of retrying and loop back if error threshold not reached
+                        if error_count <= 5:
+                            stng.LOG.info(f'WARNING: Invalid Escalation rank {escal_rank} detected. Retrying...')
+                            program_mode = 'IN_ESCAL'
+                            time.sleep(error_count)
+                        elif error_count > 5:
+                            stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
+                            program_mode = 'RAMSGATE'
+
+
+            # await loot screen if passed escalation summary screen
+            elif program_mode == 'ESCAL_LOOT':
+                program_mode = loot_detect(screen_grab, program_mode)
+
+                # read loot screen if available
+                if program_mode == 'LOOT_SCREEN':
+                    stng.LOG.info(f'Escalation loot screen detected, processing...')
+
+                    # read the loot screen
+                    loot_status, loot_data = escal_loot_reader(screen_grab, target_name)
+
+                    if loot_status == 'OK':
+                        fill_basic_form(loot_data)
+                        stng.LOG.info(f'Submitted data: {" - ".join(loot_data.values())}\n')
+                        program_mode = 'RAMSGATE'
+
 
         # log any exceptions encountered by the program
         except Exception:
-
             stng.LOG.exception('An exception has occured: ')
 
 '''

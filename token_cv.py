@@ -21,6 +21,8 @@ def detect_element(screen_grab, slice, target, prec=0.8):
     res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
     
+    print(max_loc)
+
     # if target found at any position, return true
     if max_val < prec:
         return False
@@ -130,6 +132,10 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     return pytesseract.image_to_string(ocr_image, config=tess_config)
 
 
+'''
+Provided screen grab and slice, read escalation level from lobby
+Mirrors reading behemoth name in lobby
+'''
 def read_escalation_level(screen_grab, slice):
 
     # slice off the critical area from full-screen capture 
@@ -142,7 +148,25 @@ def read_escalation_level(screen_grab, slice):
     image_slice = cv2.bitwise_not(image_slice)
     ret, ocr_image = cv2.threshold(image_slice, 175, 255, cv2.THRESH_BINARY)
 
-    cv2.imwrite('./devdata/test_escal.png', ocr_image)
-
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image)
+
+
+'''
+Provided a screen grab and slice, reads escalation rank
+from the summary screen of escalation
+'''
+def read_escalation_rank(screen_grab, slice):
+
+    # slice off the critical area from full-screen capture 
+    image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
+
+    # convert to grayscale
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+
+    # thresholding to increase tesseract's ability to read the image
+    image_slice = cv2.bitwise_not(image_slice)
+    ret, ocr_image = cv2.threshold(image_slice, 175, 255, cv2.THRESH_BINARY)
+
+    # read the behemoth name
+    return pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=SABCDE-')

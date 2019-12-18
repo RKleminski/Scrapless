@@ -6,12 +6,6 @@
             "width_start":1475,
             "width_end":1870
         },
-        "escalation_slice":{
-            "height_start":120,
-            "height_end":185,
-            "width_start":1375,
-            "width_end":1850
-        },
         "slice":{
             "height_start":865,
             "height_end":915,
@@ -55,6 +49,26 @@
             "height_end":899,
             "width_start":90,
             "width_end":165
+        }
+    },
+    "escalation":{
+        "lobby_slice":{
+            "height_start":120,
+            "height_end":185,
+            "width_start":1375,
+            "width_end":1850
+        },
+        "summary_slice":{
+            "height_start":345,
+            "height_end":400,
+            "width_start":770,
+            "width_end":1150
+        },
+        "rank_slice":{
+            "height_start":590,
+            "height_end":670,
+            "width_start":1450,
+            "width_end":1525
         }
     }
 }
