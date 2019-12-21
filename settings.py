@@ -253,12 +253,23 @@ TOKEN_SLC = [int(ASP_CONF['loot']['token_slice']['height_start'] * Y_SCALE),
 
 
 TOKEN_IMG = cv2.imread(f'./data/images/targets/token/{A_RATIO_PATH}_token.png', 0)
-new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE),  int(TOKEN_IMG.shape[0] * Y_SCALE))
+new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE), int(TOKEN_IMG.shape[0] * Y_SCALE))
 TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
 
 LOG.info('SETUP: Region and target data read successfully.\n')
 
 OVERLAY_ON = CONF['overlay']['enable'] == 'Yes'
-OVERLAY_X = CONF['overlay']['pos_x']
-OVERLAY_Y = CONF['overlay']['pos_y']
-OVERLAY_MAX_LINES = int(CONF['overlay']['max_lines'])
+OVERLAY_TRANSPARENCY = float(CONF['overlay']['transparency'])
+
+OVERLAY_X = CONF['overlay']['position']['X']
+OVERLAY_Y = CONF['overlay']['position']['Y']
+
+OVERLAY_MAX_LINES = CONF['overlay']['output']['max_lines']
+OVERLAY_FONT = CONF['overlay']['output']['font']
+OVERLAY_FONT_SIZE = CONF['overlay']['output']['font-size']
+
+OVERLAY_COLOR_BG = CONF['overlay']['colors']['background']
+OVERLAY_COLOR_SUCCESS = CONF['overlay']['colors']['success']
+OVERLAY_COLOR_INFO = CONF['overlay']['colors']['info']
+OVERLAY_COLOR_WARNING = CONF['overlay']['colors']['warning']
+OVERLAY_COLOR_ERROR = CONF['overlay']['colors']['error']
