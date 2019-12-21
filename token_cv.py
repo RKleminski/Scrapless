@@ -124,7 +124,9 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     # thresholding to increase tesseract's ability to read the image
     if inverse:
         image_slice = cv2.bitwise_not(image_slice)
-    ret, ocr_image = cv2.threshold(image_slice, 65, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, 100, 255, cv2.THRESH_BINARY)
+
+    cv2.imwrite('./devdata/test_behemoth.png', ocr_image)
 
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image, config=tess_config)

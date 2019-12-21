@@ -236,6 +236,11 @@ def main():
             # pause between captures
             time.sleep(1)
 
+            if stng.OVERLAY_ON:
+
+                # update overlay and ensure it stays on top
+                overlay.master.update()
+                overlay.master.lift()
 
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
