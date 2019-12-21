@@ -70,5 +70,19 @@
             "width_start":1450,
             "width_end":1525
         }
+    },
+    "bounty":{
+        "slice":{
+            "height_start":65,
+            "height_end":140,
+            "width_start":775,
+            "width_end":1145
+        },
+        "quality":{
+            "height_start":815,
+            "height_end":855,
+            "width_start":605,
+            "width_end":683
+        }
     }
 }

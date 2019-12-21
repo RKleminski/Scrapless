@@ -259,14 +259,14 @@ TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
 LOG.info('SETUP: Region and target data read successfully.\n')
 
 OVERLAY_ON = CONF['overlay']['enable'] == 'Yes'
-OVERLAY_TRANSPARENCY = float(CONF['overlay']['transparency'])
+OVERLAY_TRANSPARENCY = float(CONF['overlay']['transparency']) / 100.0
 
 OVERLAY_X = CONF['overlay']['position']['X']
 OVERLAY_Y = CONF['overlay']['position']['Y']
 
 OVERLAY_MAX_LINES = CONF['overlay']['output']['max_lines']
 OVERLAY_FONT = CONF['overlay']['output']['font']
-OVERLAY_FONT_SIZE = CONF['overlay']['output']['font-size']
+OVERLAY_FONT_SIZE = str(CONF['overlay']['output']['font-size'])
 
 OVERLAY_COLOR_BG = CONF['overlay']['colors']['background']
 OVERLAY_COLOR_SUCCESS = CONF['overlay']['colors']['success']
