@@ -257,3 +257,8 @@ new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE),  int(TOKEN_IMG.shape[0] * Y_SCAL
 TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
 
 LOG.info('SETUP: Region and target data read successfully.\n')
+
+OVERLAY_ON = CONF['overlay']['enable'] == 'Yes'
+OVERLAY_X = CONF['overlay']['pos_x']
+OVERLAY_Y = CONF['overlay']['pos_y']
+OVERLAY_MAX_LINES = int(CONF['overlay']['max_lines'])

@@ -1,6 +1,8 @@
 import time
 import pytesseract
 import settings as stng
+import tkinter
+
 
 from fuzzywuzzy import fuzz, process
 from token_cv import *
@@ -147,18 +149,73 @@ def fuzzy_behemoth(behemoth_name):
         return '' if match is None else match[0]
 
 
+def overlay_setup(overlay_labels):
+
+    # draw new overlay
+    line = 'SCRAPLESS'
+    color = 'white'
+
+    label = tkinter.Label(text=line, font=('Calibri Bold','10'), fg=color, bg='black')
+    overlay_labels.append(label)
+    label.pack()
+
+    label.master.overrideredirect(True)
+    label.master.geometry(f"+{stng.OVERLAY_X}+{stng.OVERLAY_Y}")
+    label.master.minsize(500, 21 * (stng.OVERLAY_MAX_LINES + 1))
+    label.master.configure(bg='black')
+    label.master.lift()
+    label.master.wm_attributes("-topmost", True)
+    label.master.wm_attributes("-disabled", True)
+
+    return label, overlay_labels
+
+
+def overlay_update(new_line, line_color, overlay_labels):
+
+    while len(overlay_labels) >= stng.OVERLAY_MAX_LINES + 1:
+        overlay_labels[1].destroy()
+        overlay_labels.pop(1)
+
+    label = tkinter.Label(text=new_line, font=('Calibri Bold','10'), fg=line_color, bg='black')
+    overlay_labels.append(label)
+    label.pack()
+
+    return label, overlay_labels
+
+
+def system_output(message, color, overlay, overlay_labels):
+
+    if stng.OVERLAY_ON:
+
+        overlay, overlay_labels = overlay_update(message.replace('\n', ''), color, overlay_labels)
+
+    stng.LOG.info(message)
+
+    return overlay, overlay_labels
+
+
 '''
 Bread and butter of the program, running in a loop to continously
 read the screen of the user, in order to recover data and process
 data collecting efforts
 '''
 def main():
+    
+    # store overlay variables
+    overlay = ''
+    overlay_lines = []
+    overlay_labels = []
+
+    # configure overlay if enabled
+    if stng.OVERLAY_ON:
+        overlay, overlay_labels = overlay_setup(overlay_labels)
 
     # configure tesseract path
     pytesseract.pytesseract.tesseract_cmd = stng.TESS_PTH
 
     # variable to control the current operations of the program
     program_mode = 'RAMSGATE'
+
 
     # work in the loop of image recognition
     while True:
@@ -168,6 +225,11 @@ def main():
             # pause between captures
             time.sleep(1)
 
+            # update overlay and ensure it stays on top
+            if stng.OVERLAY_ON:
+                overlay.update()
+                overlay.lift()
+
 
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
@@ -175,12 +237,15 @@ def main():
 
             # read for lobby screen if last seen in ramsgate
             if program_mode == 'RAMSGATE':
+
                 error_count = 0
                 program_mode, target_name = lobby_detect(screen_grab)
 
                 # if Escalation detected, wait for results screen
                 if program_mode == 'ESCAL':
-                    stng.LOG.info(f'{target_name} lobby detected, awaiting result screen...')
+                    
+                    system_message = f'{target_name} lobby detected, awaiting result screen...'
+                    overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)                    
                     program_mode = 'IN_ESCAL'
                 
                 # if Hunt detected, proceed to read lobby further
@@ -191,38 +256,53 @@ def main():
 
                     # inform user if retrieved hunt details are invalid
                     if validate_hunt(threat_level, target_name):
-                        stng.LOG.info(f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...')
+
+                        system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
+                        overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
                         program_mode = 'IN_HUNT'
+
                     else:
-                        stng.LOG.info(f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...')
+
+                        system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
+                        overlay, overlay_labels = system_output(system_message, 'red', overlay, overlay_labels)
                         program_mode = 'RAMSGATE'
 
 
             # await loot screen if currently in a regular hunt
             elif program_mode == 'IN_HUNT':
+
                 program_mode = loot_detect(screen_grab, program_mode)
 
                 # read loot screen if available
                 if program_mode == 'LOOT_SCREEN':
-                    stng.LOG.info(f'Loot screen detected, processing...')
+
+                    system_message = f'Loot screen detected, processing...'
+                    overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
                     loot_status, loot_data = loot_reader(screen_grab, threat_level, hunt_type, target_name)
 
                     # accept defeat and reset program mode
                     if loot_status == 'DEFEAT':
-                        stng.LOG.info('DEFEAT: The party has been defeated, no data will be submitted.\n')  
+
+                        system_message = 'DEFEAT: The party has been defeated, no data will be submitted.\n'
+                        overlay, overlay_labels = system_output(system_message, 'yellow', overlay, overlay_labels)
                         program_mode = 'RAMSGATE'
 
                     # otherwise, if everything is fine, submit data
                     elif loot_status == 'OK':
 
-                        if loot_data['threat_level'] == 1:
-                            stng.LOG.info('INFO: Insufficient threat level detected. Data will not be submitted.')
+                        if int(loot_data['threat_level']) == 1:
+
+                            system_message = 'INFO: Insufficient threat level detected. Data will not be submitted.'
+                            overlay, overlay_labels = system_output(system_message, 'yellow', overlay, overlay_labels)
                             program_mode = 'RAMSGATE'
 
-                        elif loot_data['threat_level'] > 1:
+                        elif int(loot_data['threat_level']) > 1:
+
                             fill_basic_form(loot_data)
                             fill_rich_form(loot_data)
-                            stng.LOG.info(f'Submitted data: {" - ".join(loot_data.values())}\n')
+
+                            system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
+                            overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
                             program_mode = 'RAMSGATE'
 
                     # otherwise, if error occured, retry
@@ -233,11 +313,16 @@ def main():
                         
                         # inform the user of retrying and loop back if error threshold not reached
                         if error_count <= 5:
-                            stng.LOG.info(f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...')
+
+                            system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
+                            overlay, overlay_labels = system_output(system_message, 'red', overlay, overlay_labels)
                             program_mode = 'IN_HUNT'
                             time.sleep(error_count)
+
                         elif error_count > 5:
-                            stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
+
+                            system_message = 'WARNING: Retry limit reached. Data will not be submitted.\n'
+                            overlay, overlay_labels = system_output(system_message, 'red', overlay, overlay_labels)
                             program_mode = 'RAMSGATE'
 
 
@@ -250,18 +335,24 @@ def main():
 
                 # process escalation summary screen
                 if program_mode == 'ESCAL_SUMM':
-                    stng.LOG.info(f'Escalation summary screen detected, processing...')
+
+                    system_message = f'Escalation summary screen detected, processing...'
+                    overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
 
                     # read rank of final escalation round
                     escal_rank = read_escalation_rank(screen_grab, stng.ESCAL_RANK_SLC)
 
                     # if last round was not passed
                     if escal_rank == '-':
-                        stng.LOG.info('Escalation failed, data will not be submitted.\n')
+
+                        system_message = 'Escalation failed, data will not be submitted.\n'
+                        overlay, overlay_labels = system_output(system_message, 'yellow', overlay, overlay_labels)
 
                     # if valid rank was read
                     elif escal_rank in ['S', 'A', 'B', 'C', 'D', 'E']:
-                        stng.LOG.info(f'Escalation successful with final round rank {escal_rank}, awaiting loot screen...')
+
+                        system_message = f'Escalation successful with final round rank {escal_rank}, awaiting loot screen...'
+                        overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
                         program_mode = 'ESCAL_LOOT'
 
                     # if invalid rank was read
@@ -272,28 +363,38 @@ def main():
                         
                         # inform the user of retrying and loop back if error threshold not reached
                         if error_count <= 5:
-                            stng.LOG.info(f'WARNING: Invalid Escalation rank {escal_rank} detected. Retrying...')
+
+                            system_message = f'WARNING: Invalid Escalation rank {escal_rank} detected. Retrying...'
+                            overlay, overlay_labels = system_output(system_message, 'red', overlay, overlay_labels)
                             program_mode = 'IN_ESCAL'
                             time.sleep(error_count)
+
                         elif error_count > 5:
-                            stng.LOG.info('WARNING: Retry limit reached. Data will not be submitted.\n')
+
+                            system_message = 'WARNING: Retry limit reached. Data will not be submitted.\n'
+                            overlay, overlay_labels = system_output(system_message, 'red', overlay, overlay_labels)
                             program_mode = 'RAMSGATE'
 
 
             # await loot screen if passed escalation summary screen
             elif program_mode == 'ESCAL_LOOT':
+
                 program_mode = loot_detect(screen_grab, program_mode)
 
                 # read loot screen if available
                 if program_mode == 'LOOT_SCREEN':
-                    stng.LOG.info(f'Escalation loot screen detected, processing...')
+
+                    system_message = f'Escalation loot screen detected, processing...'
+                    overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
 
                     # read the loot screen
                     loot_status, loot_data = escal_loot_reader(screen_grab, target_name)
 
                     if loot_status == 'OK':
+                        
                         fill_basic_form(loot_data)
-                        stng.LOG.info(f'Submitted data: {" - ".join(loot_data.values())}\n')
+                        system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
+                        overlay, overlay_labels = system_output(system_message, 'green', overlay, overlay_labels)
                         program_mode = 'RAMSGATE'
 
 

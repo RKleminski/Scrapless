@@ -12,5 +12,11 @@
     "y_offset":0,
     "width":1920,
     "height":1080
+  },
+  "overlay":{
+    "enable": "No",
+    "pos_x": "65",
+    "pos_y": "996",
+    "max_lines": "3"
   }
 }

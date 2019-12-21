@@ -20,8 +20,6 @@ def detect_element(screen_grab, slice, target, prec=0.8):
     
     res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    
-    print(max_loc)
 
     # if target found at any position, return true
     if max_val < prec:
@@ -146,10 +144,10 @@ def read_escalation_level(screen_grab, slice):
 
     # thresholding to increase tesseract's ability to read the image
     image_slice = cv2.bitwise_not(image_slice)
-    ret, ocr_image = cv2.threshold(image_slice, 175, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, 170, 255, cv2.THRESH_BINARY)
 
     # read the behemoth name
-    return pytesseract.image_to_string(ocr_image)
+    return pytesseract.image_to_string(ocr_image, config='-c tessedit_char_whitelist=Escaltion1350-')
 
 
 '''
