@@ -10,6 +10,8 @@ __pycache__/
 ocr_grabs/
 test_grabs/
 error_logs
+devdata/
+logs/
 *.png
 
 # Distribution / packaging

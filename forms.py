@@ -19,19 +19,16 @@ import time
 A function to submit the data to the basic data-gathering Form
 This supplies only a binary token-drop information, along with 
 hunt category and patch version of the game
-
-More nuanced data is withheld here, and kept for the second, more
-detailed form
 '''
-def fill_basic_form(if_token_drop, hunt_category, patch_version):
+def fill_basic_form(loot_data):
 
     # address to the basic data collection form
     url = 'https://docs.google.com/forms/d/e/1FAIpQLSdqFcIsscHN6lgNi3mP2Z1_MW0PlpLGG2trsznf19tL0lPnig/formResponse'
     
     # prepare response data
-    form_data = {"entry.363103481": if_token_drop, 
-                 "entry.936871560": hunt_category, 
-                 "entry.985493627": patch_version,
+    form_data = {"entry.363103481": loot_data['drop'], 
+                 "entry.936871560": loot_data['hunt_tier'], 
+                 "entry.985493627": loot_data['patch_ver'],
                  "draftResponse":'[]',
                  "pageHistory":0
                  }
@@ -42,21 +39,23 @@ def fill_basic_form(if_token_drop, hunt_category, patch_version):
 
 '''
 A function to submit the data to the expanded data-gathering Form
+Submits binary token-drop information, type and tier of the hunt,
+threat level, behemoth name, patch version and the user
 '''
-def fill_rich_form(if_token_drop, hunt_type, hunt_tier, threat_level, behemoth_name, patch_version, user):
+def fill_rich_form(loot_data):
 
     # address to the basic data collection form
     url = 'https://docs.google.com/forms/d/e/1FAIpQLSfqaV4JbwTrLRXdD9SLFny6D_cXZCgWqa5L6J-PSgLsVYb36Q/formResponse'
     
     # prepare response data
     form_data ={
-        'entry.114724379': if_token_drop,
-        'entry.250442381': hunt_type,
-        'entry.1693875264': hunt_tier,
-        'entry.987397251': threat_level,
-        'entry.686667836': behemoth_name,
-        'entry.668337464': patch_version,
-        'entry.1430591986': user,
+        'entry.114724379': loot_data['drop'],
+        'entry.250442381': loot_data['hunt_type'],
+        'entry.1693875264': loot_data['hunt_tier'],
+        'entry.987397251': loot_data['threat_level'],
+        'entry.686667836': loot_data['behemoth_name'],
+        'entry.668337464': loot_data['patch_ver'],
+        'entry.1430591986': loot_data['user'],
         'draftResponse': [],
         'pageHistory': 0
         }

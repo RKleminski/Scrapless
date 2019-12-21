@@ -8,51 +8,29 @@
     "tesseract_conf":"./data/tesseract/dauntless"
   },
   "screen":{
-    "x":0,
-    "y":0,
+    "x_offset":0,
+    "y_offset":0,
     "width":1920,
     "height":1080
   },
-  "lobby_detect":{
-    "height_start":835,
-    "height_end":885,
-    "width_start":1350,
-    "width_end":1860
-  },
-  "htype_detect":{
-    "height_start":990,
-    "height_end":1045,
-    "width_start":775,
-    "width_end":1145
-  },
-  "threat_detect":{
-    "height_start":215,
-    "height_end":255,
-    "width_start":1465,
-    "width_end":1505
-  },
-  "loot_detect":{
-    "height_start":45,
-    "height_end":205,
-    "width_start":345,
-    "width_end":675
-  },
-  "behe_lobby":{
-    "height_start":140,
-    "height_end":180,
-    "width_start":1455,
-    "width_end":1850
-  },
-  "behe_loot":{
-    "height_start":20,
-    "height_end":50,
-    "width_start":95,
-    "width_end":450
-  },
-  "token_detect":{
-    "height_start":265,
-    "height_end":850,
-    "width_start":95,
-    "width_end":490
+  "overlay":{
+    "enable": "Yes",
+    "transparency": "0.65",
+    "position":{
+      "Y": 1015,
+      "X": 65
+    },
+    "output":{
+      "max_lines": 3,
+      "font": "Calibri Bold",
+      "font-size": "10"
+    },
+    "colors":{
+      "background": "#000000",
+      "success": "#7cfc00",
+      "info": "#40e0d0",
+      "warning": "#ffc125",
+      "error": "#ff4500"
+    }
   }
 }
