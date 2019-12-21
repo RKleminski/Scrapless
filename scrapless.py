@@ -265,7 +265,7 @@ def main():
                         system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
                         overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
                         program_mode = 'IN_HUNT'
-
+                        
                     else:
 
                         system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
@@ -329,7 +329,7 @@ def main():
                             system_message = 'WARNING: Retry limit reached. Data will not be submitted.\n'
                             overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay, overlay_labels)
                             program_mode = 'RAMSGATE'
-
+                            
 
             # await escalation summary screen if during escalation mode
             elif program_mode == 'IN_ESCAL':
@@ -401,7 +401,7 @@ def main():
                         system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
                         overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
                         program_mode = 'RAMSGATE'
-
+                        
 
         # log any exceptions encountered by the program
         except Exception:

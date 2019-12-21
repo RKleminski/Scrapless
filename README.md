@@ -17,6 +17,24 @@ Python script for automated data collection on Dauntless Bounty Tokens
 
 When you intend to play *Dauntless*, simply run *Scrapless* and let it do its work. Console output will inform you about the current operation of the program. In some unforeseen circumstances, it might be necessary to restart the program to ensure its continued operation.
 
+# What does it actually do?
+
+The idea behind Scrapless is simple: it uses image recognition and Optical Character Recognition (reading text off images) to automatically gather the data off your screen as you play. This is achieved by a loop of operations:
+
+1. Once started, Scrapless will begin taking snapshots of your main monitor every second. This delay can grow longer, as it starts after all current image processing has concluded.
+
+    a) What is your main monitor? On Windows systems (which you have to use to play Dauntless) it is the one where all games will run by default, and which has a more fully fledged Task Bar. You can always check which screen is your main in system settings.
+
+2. In the event of Airship Lobby being found on the screenshot, it a few quick procedures will be launched to get hunt type (Patrol/Pursuit), Behemoth name and Threat Level. These are saved to memory for later use. Until the hunt concludes, this part of the program won't run anymore.
+
+3. In the event of Loot screen being detected, the program will again retrieve behemoth name, along with information on whether or not the token appears in the loot (they always take the top spot, making this task easy). From there one, one of the following happens:
+
+    a) All data is correct, and the program will submit it through designated GoogleForms, then purge its memory and look for another Lobby screen.
+
+    b) Player party was defeated, data is not submitted, and its purged.
+
+    c) There is a mismatch between behemoth names, causing the program to re-try the procedure five more times, in three second intervals (in case it was attempting to read the screen at an inopportune time). If the retry limit is reached, data won't be submitted and will be purged.
+
 # Bugs and issues
 
 Report them here, or contact me directly through social media handles mentioned when sharing the link to this repository.
