@@ -49,6 +49,12 @@
             "height_end":899,
             "width_start":90,
             "width_end":165
+        },
+        "token_count_slice":{
+            "y_offset": 0,
+            "x_offset": 75,
+            "height": 13,
+            "width": 38
         }
     },
     "escalation":{
@@ -72,17 +78,37 @@
         }
     },
     "bounty":{
-        "slice":{
+        "draft_slice":{
             "height_start":65,
             "height_end":140,
             "width_start":775,
             "width_end":1145
         },
-        "quality":{
+        "value_slice":{
+            "height_start":100,
+            "height_end":200,
+            "width_start":660,
+            "width_end":1260
+        },
+        "menu_slice":{
             "height_start":815,
             "height_end":855,
             "width_start":605,
             "width_end":683
         }
+    },
+    "trial":{
+        "result_slice":{
+            "height_start":49,
+            "height_end":154,
+            "width_start":458,
+            "width_end":563
+        },
+        "behemoth_slice":{
+            "height_start":20,
+            "height_end":60,
+            "width_start":95,
+            "width_end":475
+        },
     }
 }
