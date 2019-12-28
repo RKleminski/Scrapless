@@ -4,6 +4,7 @@ import string
 import logging
 import cv2
 import sys
+import os
 
 from datetime import datetime
 
@@ -82,6 +83,17 @@ def get_patch_version():
         # return the patch
         return patch
 
+# ====================
+# FOLDER CREATION
+# ====================
+#
+path = './logs'
+if not os.path.exists(path):
+    os.makedirs(path)
+
+path = './error_logs'
+if not os.path.exists(path):
+    os.makedirs(path)
 
 # ====================
 # SETTING UP LOGGER

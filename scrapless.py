@@ -3,6 +3,7 @@ import pytesseract
 import settings as stng
 import tkinter
 import pyautogui
+import sys
 
 from fuzzywuzzy import fuzz, process
 
@@ -59,12 +60,6 @@ to clean up the main file code a little
 '''
 def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
 
-    # determine if we had a token drop
-    if_drop = 'Yes' if cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
-
-    # determine hunt category
-    hunt_tier = utils.get_hunt_tier(threat_level)
-
     # read the behemoth name on screen
     loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, inverse=True, tess_config=stng.TESS_CONF)
     loot_behemoth_name = utils.trim_behemoth_name(loot_behemoth_name)
@@ -76,11 +71,22 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
     # fuzzy match behemoth name to account for small OCR errors
     loot_behemoth_name = fuzzy_behemoth(loot_behemoth_name)
 
+    # determine if we had a token drop
+    if_drop = 'Yes' if cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
+
+    # determine hunt category
+    hunt_tier = utils.get_hunt_tier(threat_level)
+
+    # read hunt time
+    hunt_time = cvt.read_hunt_time(screen_grab, stng.TIME_SLC)
+
+
     # check for expected behemoth name and progress accordingly
     if behemoth_name == loot_behemoth_name:
         
         loot_data = {
             'drop': if_drop,
+            'hunt_time': hunt_time,
             'hunt_type': hunt_type,
             'hunt_tier': hunt_tier,
             'threat_level': threat_level,
@@ -101,11 +107,15 @@ and returns appropriate status once done
 def escal_loot_reader(screen_grab, escalation_tier):
     
     # determine if we had a token drop
-    if_drop = 'Yes' if cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9) else 'No'
+    if_drop, token_loc = cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
+
+    if_drop = 'Yes' if if_drop else 'No'
+    token_count = cvt.read_token_count(screen_grab, token_loc)
 
         
     loot_data = {
         'drop': if_drop,
+        'drop_count': token_count,
         'hunt_tier': escalation_tier,
         'patch_ver': stng.GAME_VER,
         'user': stng.USER
@@ -151,7 +161,6 @@ def overlay_setup(overlay_labels):
     overlay.master.configure(bg=bg_color)
     overlay.master.lift()
     overlay.master.wm_attributes("-topmost", True)
-    overlay.master.wm_attributes("-disabled", True)
     overlay.master.wm_attributes("-alpha", stng.OVERLAY_TRANSPARENCY)
 
     # update overlay and ensure it stays on top
@@ -172,15 +181,15 @@ def overlay_update(new_line, line_color, overlay_labels):
         overlay_labels[0].destroy()
         overlay_labels.pop(0)
 
-    overlay = tkinter.Label(text=new_line, font=(stng.OVERLAY_FONT, stng.OVERLAY_FONT_SIZE), fg=line_color, bg=stng.OVERLAY_COLOR_BG)
-    overlay_labels.append(overlay)
-    overlay.pack()
+    label = tkinter.Label(text=new_line, font=(stng.OVERLAY_FONT, stng.OVERLAY_FONT_SIZE), fg=line_color, bg=stng.OVERLAY_COLOR_BG)
+    overlay_labels.append(label)
+    label.pack()
 
     # update overlay and ensure it stays on top
-    overlay.master.update()
-    overlay.master.lift()
+    label.master.update()
+    label.master.lift()
 
-    return overlay, overlay_labels
+    return overlay_labels
 
 
 '''
@@ -188,15 +197,15 @@ A convenience function which automatically handles system output to console, log
 and the overlay, with specified message and color on the overlay
 Returns overlay and list of labels to keep track of
 '''
-def system_output(message, color, overlay, overlay_labels):
+def system_output(message, color, overlay_labels):
 
     if stng.OVERLAY_ON:
 
-        overlay, overlay_labels = overlay_update(message.replace('\n', ''), color, overlay_labels)
+        overlay_labels = overlay_update(message.replace('\n', ''), color, overlay_labels)
 
     stng.LOG.info(message)
 
-    return overlay, overlay_labels
+    return overlay_labels
 
 
 '''
@@ -254,10 +263,10 @@ def main():
                 if program_mode == 'NO_LOBBY':
                     
                     # if bounty screen detected, switch program mode 
-                    if cvt.detect_element(screen_grab, stng.BOUNTY_SLC, stng.BOUNTY_IMG):
+                    if cvt.detect_element(screen_grab, stng.BOUNTY_DRAFT_SLC, stng.BOUNTY_DRAFT_IMG):
 
                         system_message = 'Bounty drafting screen detected, processing...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                         program_mode = 'IN_DRAFT'
 
                     # otherwise go back to default mode
@@ -269,7 +278,7 @@ def main():
                 elif program_mode == 'ESCAL':
                     
                     system_message = f'{target_name} lobby detected, awaiting result screen...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)                    
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
                     program_mode = 'IN_ESCAL'
                 
 
@@ -277,7 +286,7 @@ def main():
                 elif program_mode == 'HUNT':
 
                     system_message = 'Hunt lobby detected, reading...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     threat_level, hunt_type = lobby_reader(screen_grab)
 
 
@@ -285,20 +294,20 @@ def main():
                     if threat_level in ['18', '22']:
 
                         system_message = utils.trial_hype_line(threat_level)
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
                         program_mode = 'IN_TRIAL'
 
                     # inform user if retrieved hunt details are invalid
                     elif utils.validate_hunt(threat_level, target_name):
 
                         system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                         program_mode = 'IN_HUNT'
                         
                     else:
 
                         system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'RAMSGATE'
 
 
@@ -319,18 +328,18 @@ def main():
                     if error_count <= 5:
 
                         system_message = f'WARNING: Invalid bounty value of {bounty_value} detected. Retrying...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                     
                     elif error_count > 5:
 
                         system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
                         program_mode = 'RAMSGATE'
 
                 else:
 
                     system_message = f'{bounty_tier} bounty drafting detected. Awaiting draft end.'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                     program_mode == 'END_DRAFT'
 
 
@@ -341,12 +350,12 @@ def main():
                 # detect the player returning to bounty menu
                 if cvt.detect_element(screen_grab, stng.BOUNTY_MENU_SLC, stng.BOUNTY_MENU_IMG):
 
+                    system_message = f'Submitted data: {bounty_tier} - {stng.USER}.'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                    program_mode == 'RAMSGATE'
+                    
                     # submit data
                     # bounty_form()
-
-                    system_message = f'Submitted data: {bounty_tier} - {stng.USER}.'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
-                    program_mode == 'RAMSGATE'
 
 
             # if trial lobby detected, wait for loot to display a message
@@ -365,12 +374,12 @@ def main():
                     if behemoth_name == 'Defeated':
 
                         system_message = utils.trial_defeat_line(threat_level)
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     else:
 
                         system_message = utils.trial_victory_line(threat_level)
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     # return to normal operation of the program
                     program_mode = 'RAMSGATE'
@@ -384,7 +393,7 @@ def main():
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
                     
                     system_message = f'Loot screen detected, processing...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     program_mode = 'IN_LOOT'
 
 
@@ -399,7 +408,7 @@ def main():
                 if loot_status == 'DEFEAT':
 
                     system_message = 'DEFEAT: The party has been defeated, no data will be submitted.\n'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                     program_mode = 'RAMSGATE'
 
 
@@ -409,17 +418,17 @@ def main():
                     if int(loot_data['threat_level']) == 1:
 
                         system_message = 'INFO: Insufficient threat level detected. Data will not be submitted.'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'RAMSGATE'
 
                     elif int(loot_data['threat_level']) > 1:
 
+                        system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                        program_mode = 'RAMSGATE'
+
                         forms.fill_basic_form(loot_data)
                         forms.fill_rich_form(loot_data)
-
-                        system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
-                        program_mode = 'RAMSGATE'
 
 
                 # otherwise, if error occured, retry
@@ -432,14 +441,14 @@ def main():
                     if error_count <= 5:
 
                         system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'IN_LOOT'
                         time.sleep(error_count)
 
                     elif error_count > 5:
 
                         system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
                         program_mode = 'RAMSGATE'
                             
 
@@ -451,7 +460,7 @@ def main():
                 if cvt.detect_element(screen_grab, stng.ESCAL_SUMM_SLC, stng.ESCAL_SUMM_IMG):
 
                     system_message = f'Escalation summary screen detected, processing...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     program_mode == 'IN_ESCAL_SUMM'
 
 
@@ -466,13 +475,13 @@ def main():
                 if escal_rank == '-':
 
                     system_message = 'Escalation failed, data will not be submitted.\n'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
 
                 # if valid rank was read
                 elif escal_rank in ['S', 'A', 'B', 'C', 'D', 'E']:
 
                     system_message = f'Escalation successful with final round rank {escal_rank}, awaiting loot screen...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                     program_mode = 'WAIT_ESCAL_LOOT'
 
                 # if invalid rank was read
@@ -485,14 +494,14 @@ def main():
                     if error_count <= 5:
 
                         system_message = f'WARNING: Invalid Escalation rank {escal_rank} detected. Retrying...'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'IN_ESCAL_SUMM'
                         time.sleep(error_count)
 
                     elif error_count > 5:
 
                         system_message = 'WARNING: Retry limit reached. Data will not be submitted.\n'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
                         program_mode = 'RAMSGATE'
 
 
@@ -504,7 +513,7 @@ def main():
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
 
                     system_message = f'Escalation loot screen detected, processing...'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay, overlay_labels)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     program_mode = 'IN_ESCAL_LOOT'
 
 
@@ -517,11 +526,12 @@ def main():
 
                     # read the loot screen
                     loot_data = escal_loot_reader(screen_grab, target_name)
-    
-                    forms.fill_basic_form(loot_data)
+
                     system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
-                    overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay, overlay_labels)
-                    program_mode = 'RAMSGATE'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                    program_mode = 'RAMSGATE'    
+                    forms.fill_basic_form(loot_data)
+
 
                 # error if we can't establish loot screen anymore
                 else:
@@ -533,14 +543,14 @@ def main():
                     if error_count <= 5:
 
                         system_message = f"WARNING: Can't access loot data. Retrying..."
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'IN_ESCAL_LOOT'
                         time.sleep(error_count)
 
                     elif error_count > 5:
 
                         system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                        overlay, overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay, overlay_labels)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
                         program_mode = 'RAMSGATE'
                         
 

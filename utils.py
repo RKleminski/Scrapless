@@ -92,9 +92,10 @@ def trial_hype_line(threat_level):
         hype_lines = [
             *hype_lines,
             'May the Gods have mercy upon your soul.',
+            'Abandon hope all ye who enter here.'
             ]
 
-    return f'{trial_tier} detected. {random.choice(hype_lines)}'
+    return f'{get_hunt_tier(threat_level)} detected. {random.choice(hype_lines)}'
 
 
 '''
