@@ -50,5 +50,25 @@
             "width_start":85,
             "width_end":160
         }
+    },
+    "escalation":{
+        "lobby_slice":{
+            "height_start":120,
+            "height_end":180,
+            "width_start":1185,
+            "width_end":1685
+        },
+        "summary_slice":{
+            "height_start":335,
+            "height_end":390,
+            "width_start":650,
+            "width_end":1025
+        },
+        "rank_slice":{
+            "height_start":575,
+            "height_end":650,
+            "width_start":1230,
+            "width_end":1300
+        }
     }
 }
