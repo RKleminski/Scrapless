@@ -1,17 +1,52 @@
 # Scrapless
-Python script for automated data collection on Dauntless Bounty Tokens
+Python script for automated data collection on Dauntless Bounty Tokens and Dauntless Bounty Rarities.
+The spreadsheet which tracks all the results and computes statistics is vailablee [here](https://docs.google.com/spreadsheets/d/1wtdNR_wwfzliNhLvSw0MW-yoDe4uhLDuPJ0mL1y1Gps/edit#gid=1171610346)
+
+# Requirements
+
+1. You must be running the game in 1920x1080 resolution, either Fullscreen or Borderless Fullscreen.
+2. Borderless Fulscreen is required to have the overlay working.
 
 # Setup
 
+## 1. Installation
+
 1. Install the newest version of Tesseract (available [here](https://github.com/UB-Mannheim/tesseract/wiki))
 2. Download the repository, or pre-built executable from the [releases](https://github.com/RKleminski/Scrapless/releases) page
-3. Open `config.json` located in `/scrapless/data/json/` and fill in the following:
 
-    a) Provide your nickname in the field `name` of `user` section of the config. This is stored for future time-series analysis and other per-user statistics. If you do not wish to be identifiable, leaving this field empty will prompt Scrapless to fill it with a random ID composed of 20 characters. It would be of great help if you used this exact ID in the future, even after migrating to newer versions of the program
+## 2. Configuration
+
+1. Open `config.json` located in `/scrapless/data/json/`
+
+2. Provide your nickname in the field `name` of `user` section of the config:
+
+    a) This is stored for future time-series analysis and other per-user statistics. 
     
-    b) In the `paths` section of the config, add the path to your *Dauntless* folder in the `game` field (eg. `"game": "E:/Epic Games/Dauntless",`). This is necessary for the program to access game's current patch version
+    b) If you do not wish to be identifiable, leaving this field empty will prompt Scrapless to fill it with a random ID composed of 20 characters. It would be of great help if you used this exact ID in the future, even after migrating to newer versions of the program.
+
+3.  Provide necessary paths in the `paths` section of the file:
+
+    a) Add the path to your *Dauntless* folder in the `game` field (eg. `"game": "E:/Epic Games/Dauntless",`). This is necessary for the program to access game's current patch version.
     
-    c) In the same `paths` section, verify that the path leading to `tesseract.exe` is correct
+    b) In the `tesseract` field, verify that the path leading to *tesseract.exe* is correct. 
+    
+4. Leave the `screen` section untouched. This part of the configuration is there for the future development.
+
+5. Configure the `overlay`:
+
+    a) You can completely disable the overlay by filling "No" in `enable` field.
+    
+    b) `opacity` is a numeric value describing how transparent the overlay background and output should be. For example, 65 means 65% opacity.
+    
+    c) `position` provides screen coordinates for the upper left corner of the overlay. Be advised that the overlay is 500px wide, while its height is determined by `font-size` and `max_lines`.
+    
+    d) `max_lines` sets a cap of how many output lines the overlay will show. All output is pushed to the console regardless.
+    
+    e) `font` sets the font to use in the output.
+    
+    f) `font_size` determines font size on the overlay.
+    
+    g) All fields in the `colors` section determine the colors of specific types of output lines and the background of the overlay. You can change them according to your wish. All colours are provided as HEX codes.
     
 # Usage
 
