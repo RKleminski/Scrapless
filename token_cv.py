@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pyautogui
 
+from settings import TOKEN_SLC, TOKEN_COUNT_CORD
 
 '''
 Function for detecting a template element on the provided image
@@ -25,6 +26,18 @@ def detect_element(screen_grab, slice, target, prec=0.8):
     if max_val < prec:
         return False
     return True
+
+
+def locate_element(screen_grab, slice, target, prec=0.8):
+
+    # slice off the critical area from full-screen capture
+    image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+    
+    res = cv2.matchTemplate(image_slice, target, cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+    return max_loc
 
 
 '''
@@ -49,7 +62,7 @@ def read_threat_level(screen_grab, slice):
 
     image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
     
-    ret, ocr_image = cv2.threshold(image_slice, 254, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, 252, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
 
     # read the threat level
@@ -84,8 +97,6 @@ def read_hunt_time(screen_grab, slice):
 
     # resize
     ocr_image = cv2.resize(ocr_image, dim, interpolation=cv2.INTER_AREA)
-
-    cv2.imwrite('./devdata/test_time.png', ocr_image)
 
     # read the hunt time
     time = pytesseract.image_to_string(ocr_image, lang='eng', config='--psm 13 -c tessedit_char_whitelist=0123456789:.')
@@ -124,9 +135,7 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     # thresholding to increase tesseract's ability to read the image
     if inverse:
         image_slice = cv2.bitwise_not(image_slice)
-    ret, ocr_image = cv2.threshold(image_slice, 100, 255, cv2.THRESH_BINARY)
-
-    cv2.imwrite('./devdata/test_behemoth.png', ocr_image)
+    ret, ocr_image = cv2.threshold(image_slice, 150, 255, cv2.THRESH_BINARY)
 
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image, config=tess_config)
@@ -170,3 +179,54 @@ def read_escalation_rank(screen_grab, slice):
 
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=SABCDE-')
+
+
+def read_token_count(screen_grab, token_loc):
+
+    img_slice = [
+        TOKEN_SLC[0] + token_loc[1] + TOKEN_COUNT_CORD[0],
+        TOKEN_SLC[0] + token_loc[1] + TOKEN_COUNT_CORD[2],
+        TOKEN_SLC[3] + token_loc[0] + TOKEN_COUNT_CORD[1],
+        TOKEN_SLC[3] + token_loc[0] + TOKEN_COUNT_CORD[3]
+    ]
+
+    # slice off the critical area from full-screen capture 
+    image_slice = np.array(screen_grab)[img_slice[0]:img_slice[1], img_slice[2]:img_slice[3], :]
+
+    # preprocessing to increase tesseract's ability to read the image
+    # most important here is the upscaling, followed by binarisation and inversion
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+    
+    width = int(image_slice.shape[1] * 5)
+    height = int(image_slice.shape[0] * 5)
+    dim = (width, height)
+
+    image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
+    
+    ret, ocr_image = cv2.threshold(image_slice, 150, 255, cv2.THRESH_BINARY)
+    ocr_image = cv2.bitwise_not(ocr_image)
+
+    # read token count value
+    return pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=x0123456789')
+
+
+def read_bounty_value(screen_grab, slice):
+
+    # slice off the critical area from full-screen capture 
+    image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
+
+    # preprocessing to increase tesseract's ability to read the image
+    # most important here is the upscaling, followed by binarisation and inversion
+    image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
+    
+    width = int(image_slice.shape[1] * 5)
+    height = int(image_slice.shape[0] * 5)
+    dim = (width, height)
+
+    image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
+    
+    ret, ocr_image = cv2.threshold(image_slice, 175, 255, cv2.THRESH_BINARY)
+    ocr_image = cv2.bitwise_not(ocr_image)
+
+    # read bounty value
+    return pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=x0123456789')
