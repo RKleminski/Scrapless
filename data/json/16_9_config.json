@@ -1,22 +1,22 @@
 {
     "lobby":{
         "behemoth_slice":{
-            "height_start":190,
-            "height_end":225,
-            "width_start":1475,
-            "width_end":1870
+            "height_start":165,
+            "height_end":203,
+            "width_start":1395,
+            "width_end":1800
         },
         "slice":{
             "height_start":865,
             "height_end":915,
-            "width_start":1470,
-            "width_end":1780
+            "width_start":1445,
+            "width_end":1755
         },
         "threat_slice":{
-            "height_start":263,
-            "height_end":298,
-            "width_start":1490,
-            "width_end":1535
+            "height_start":207,
+            "height_end":233,
+            "width_start":1405,
+            "width_end":1440
         },
         "hunt_type_slice":{
             "height_start":995,
@@ -52,17 +52,17 @@
         },
         "token_count_slice":{
             "y_offset": 0,
-            "x_offset": 75,
-            "height": 13,
-            "width": 38
+            "x_offset": -15,
+            "height": 30,
+            "width": 15
         }
     },
     "escalation":{
         "lobby_slice":{
-            "height_start":120,
-            "height_end":185,
-            "width_start":1375,
-            "width_end":1850
+            "height_start":95,
+            "height_end":160,
+            "width_start":1330,
+            "width_end":1805
         },
         "summary_slice":{
             "height_start":345,
@@ -70,11 +70,17 @@
             "width_start":770,
             "width_end":1150
         },
-        "rank_slice":{
+        "rank_slice_13":{
             "height_start":590,
             "height_end":670,
-            "width_start":1450,
-            "width_end":1525
+            "width_start":1425,
+            "width_end":1500
+        },
+        "rank_slice_50":{
+            "height_start":600,
+            "height_end":660,
+            "width_start":1460,
+            "width_end":1515
         }
     },
     "bounty":{
@@ -84,13 +90,13 @@
             "width_start":775,
             "width_end":1145
         },
-        "value_slice":{
+        "menu_slice":{
             "height_start":100,
             "height_end":200,
             "width_start":660,
             "width_end":1260
         },
-        "menu_slice":{
+        "value_slice":{
             "height_start":815,
             "height_end":855,
             "width_start":605,

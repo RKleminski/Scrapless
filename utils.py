@@ -79,7 +79,7 @@ Easter egg function
 Returns a random text line to hype a player before trials
 Mixes in less encouraging lines for Dauntless trials, to mess with people
 '''
-def trial_hype_line(threat_level):
+def trial_hype_line(target_name):
 
     hype_lines = [
         'You got it, skipper!',
@@ -87,7 +87,7 @@ def trial_hype_line(threat_level):
         "Don't even need a silver sword for this one!"
         ]
 
-    if threat_level == '22':
+    if target_name == 'Trial Dauntless':
 
         hype_lines = [
             *hype_lines,
@@ -95,7 +95,7 @@ def trial_hype_line(threat_level):
             'Abandon hope all ye who enter here.'
             ]
 
-    return f'{get_hunt_tier(threat_level)} detected. {random.choice(hype_lines)}'
+    return f'{target_name} detected. {random.choice(hype_lines)}'
 
 
 '''
@@ -103,7 +103,7 @@ Easter egg function
 Returns a random text line to celebrate player victory in trials
 Mixes in more weary and less happy lines for Dauntless trials
 '''
-def trial_victory_line(threat_level):
+def trial_victory_line(target_name):
 
     victory_lines = [
         'Executed with impunity!',
@@ -111,7 +111,7 @@ def trial_victory_line(threat_level):
         'The bigger the beast, the greater the glory.'
     ]
 
-    if threat_level == '22':
+    if target_name == 'Trial Dauntless':
 
         victory_lines = [
             *victory_lines,
@@ -126,7 +126,7 @@ Easter egg function
 Returns a random defeat line mourning player loss in trials
 Mixes in less charitable ones for Dauntless trials
 '''
-def trial_defeat_line(threat_level):
+def trial_defeat_line(target_name):
 
     defeat_lines = [
         'Sometimes the hero dies in the end. Just ask War.',
@@ -134,7 +134,7 @@ def trial_defeat_line(threat_level):
         'You either die a Recruit, or live long enough to become a Slayer'
     ]
 
-    if threat_level == '22':
+    if target_name == 'Trial Dauntless':
 
         defeat_lines = [
             *defeat_lines,

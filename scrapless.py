@@ -5,6 +5,9 @@ import tkinter
 import pyautogui
 import sys
 
+from win32 import win32gui
+import win32con
+
 from fuzzywuzzy import fuzz, process
 
 import token_cv as cvt
@@ -19,7 +22,7 @@ Additionally returns the name of the "target"
 def lobby_detect(screen_grab):
 
     # determine the hunt only if we see the lobby
-    if cvt.detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG):
+    if cvt.detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG, prec=0.7):
 
         # check if escalation lobby
         escalation_level = cvt.read_escalation_level(screen_grab, stng.ESCAL_LOBBY_SLC)
@@ -33,6 +36,12 @@ def lobby_detect(screen_grab):
 
         # determine behemoth name if method didn't exit with escalation level
         behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, tess_config=stng.TESS_CONF)
+
+        # if the name is actually a tier of trials, return that
+        if behemoth_name in ['Trial Normal', 'Trial Dauntless']:
+            return 'TRIAL', behemoth_name
+
+        # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
         behemoth_name = fuzzy_behemoth(behemoth_name)
 
@@ -107,11 +116,14 @@ and returns appropriate status once done
 def escal_loot_reader(screen_grab, escalation_tier):
     
     # determine if we had a token drop
-    if_drop, token_loc = cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
+    if_drop = cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
+    token_count = '0'
+
+    if if_drop:
+        token_loc = cvt.locate_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
+        token_count = cvt.read_token_count(screen_grab, token_loc).replace('x', '')
 
     if_drop = 'Yes' if if_drop else 'No'
-    token_count = cvt.read_token_count(screen_grab, token_loc)
-
         
     loot_data = {
         'drop': if_drop,
@@ -161,7 +173,13 @@ def overlay_setup(overlay_labels):
     overlay.master.configure(bg=bg_color)
     overlay.master.lift()
     overlay.master.wm_attributes("-topmost", True)
-    overlay.master.wm_attributes("-alpha", stng.OVERLAY_TRANSPARENCY)
+    overlay.master.wm_attributes("-alpha", stng.OVERLAY_OPACITY)
+
+    # set the window to be functionally transparent aka have mouse clicks pass through
+    window = win32gui.FindWindow(None, "tk")
+    lExStyle = win32gui.GetWindowLong(window, win32con.GWL_EXSTYLE)
+    lExStyle |=  win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED
+    win32gui.SetWindowLong(window, win32con.GWL_EXSTYLE , lExStyle )
 
     # update overlay and ensure it stays on top
     overlay.master.update()
@@ -289,16 +307,8 @@ def main():
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     threat_level, hunt_type = lobby_reader(screen_grab)
 
-
-                    # check if it is trials lobby
-                    if threat_level in ['18', '22']:
-
-                        system_message = utils.trial_hype_line(threat_level)
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
-                        program_mode = 'IN_TRIAL'
-
                     # inform user if retrieved hunt details are invalid
-                    elif utils.validate_hunt(threat_level, target_name):
+                    if utils.validate_hunt(threat_level, target_name):
 
                         system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
@@ -311,13 +321,21 @@ def main():
                         program_mode = 'RAMSGATE'
 
 
+                # if Trial detected, proceed
+                elif program_mode == 'TRIAL':
+
+                        system_message = utils.trial_hype_line(target_name)
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
+                        program_mode = 'IN_TRIAL'
+
+
             # if bounty drafting detected, inform the user and proceed to read the screen
             # ===========================================================================
-            if program_mode == 'IN_DRAFT':
+            elif program_mode == 'IN_DRAFT':
 
                 # read bounty reward and translate it to names
                 bounty_value = cvt.read_bounty_value(screen_grab, stng.BOUNTY_VAL_SLC)
-                bounty_tier = utils.get_bounty_tier(bounty_tier)
+                bounty_tier = utils.get_bounty_tier(bounty_value)
 
                 if bounty_tier == 'ERROR':
 
@@ -340,27 +358,33 @@ def main():
 
                     system_message = f'{bounty_tier} bounty drafting detected. Awaiting draft end.'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode == 'END_DRAFT'
+                    program_mode = 'END_DRAFT'
 
 
             # if bounty tier detected, wait for the end of drafting
             # ===========================================================================
-            if program_mode == 'END_DRAFT':
+            elif program_mode == 'END_DRAFT':
 
                 # detect the player returning to bounty menu
                 if cvt.detect_element(screen_grab, stng.BOUNTY_MENU_SLC, stng.BOUNTY_MENU_IMG):
 
-                    system_message = f'Submitted data: {bounty_tier} - {stng.USER}.'
+                    bounty_data = {
+                        'rarity': bounty_tier,
+                        'patch_ver': stng.GAME_VER,
+                        'user': stng.USER
+                    }
+
+                    system_message = f'Submitted data: {" - ".join(bounty_data.values())}.'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode == 'RAMSGATE'
+                    program_mode = 'RAMSGATE'
                     
                     # submit data
-                    # bounty_form()
+                    forms.bounty_form_submit(bounty_data)
 
 
             # if trial lobby detected, wait for loot to display a message
             # ===========================================================================
-            if program_mode == 'IN_TRIAL':
+            elif program_mode == 'IN_TRIAL':
 
                 # if loot screen detected
                 if cvt.detect_element(screen_grab, stng.TRIAL_RES_SLC, stng.TRIAL_RES_IMG):
@@ -368,17 +392,17 @@ def main():
 
                     # read behemoth name on loot screen
                     behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_TRIAL_SLC, inverse=True, tess_config=stng.TESS_CONF)
-
+                    behemoth_name = utils.trim_behemoth_name(behemoth_name)
 
                     # print a line depending on victory or defeat
                     if behemoth_name == 'Defeated':
 
-                        system_message = utils.trial_defeat_line(threat_level)
+                        system_message = utils.trial_defeat_line(target_name)
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     else:
 
-                        system_message = utils.trial_victory_line(threat_level)
+                        system_message = utils.trial_victory_line(target_name)
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     # return to normal operation of the program
@@ -387,7 +411,7 @@ def main():
 
             # await loot screen if currently in a regular hunt
             # ===========================================================================
-            if program_mode == 'IN_HUNT':
+            elif program_mode == 'IN_HUNT':
 
                 # if loot screen detected, set program to read loot
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
@@ -399,7 +423,7 @@ def main():
 
             # read loot data if in loot screen
             # ===========================================================================
-            if program_mode == 'IN_LOOT':
+            elif program_mode == 'IN_LOOT':
 
                 # read loot data
                 loot_status, loot_data = loot_reader(screen_grab, threat_level, hunt_type, target_name)
@@ -427,8 +451,8 @@ def main():
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                         program_mode = 'RAMSGATE'
 
-                        forms.fill_basic_form(loot_data)
-                        forms.fill_rich_form(loot_data)
+                        forms.token_form_basic_submit(loot_data)
+                        forms.token_form_rich_submit(loot_data)
 
 
                 # otherwise, if error occured, retry
@@ -454,28 +478,31 @@ def main():
 
             # await escalation summary screen if during escalation mode
             # ===========================================================================
-            if program_mode == 'IN_ESCAL':
+            elif program_mode == 'IN_ESCAL':
 
                 # detect escalation summary screen
                 if cvt.detect_element(screen_grab, stng.ESCAL_SUMM_SLC, stng.ESCAL_SUMM_IMG):
 
                     system_message = f'Escalation summary screen detected, processing...'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    program_mode == 'IN_ESCAL_SUMM'
+                    program_mode = 'IN_ESCAL_SUMM'
 
 
             # process escalation summary screen
             # ===========================================================================
-            if program_mode == 'IN_ESCAL_SUMM':
+            elif program_mode == 'IN_ESCAL_SUMM':
 
                 # read rank of final escalation round
-                escal_rank = cvt.read_escalation_rank(screen_grab, stng.ESCAL_RANK_SLC)
+                summ_slice = stng.ESCAL_RANK_SLC_13 if target_name == 'Escalation 1-13' else stng.ESCAL_RANK_SLC_50
+                escal_rank = cvt.read_escalation_rank(screen_grab, summ_slice)
+
 
                 # if last round was not passed
                 if escal_rank == '-':
 
                     system_message = 'Escalation failed, data will not be submitted.\n'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+                    program_mode = 'RAMSGATE'
 
                 # if valid rank was read
                 elif escal_rank in ['S', 'A', 'B', 'C', 'D', 'E']:
@@ -507,7 +534,7 @@ def main():
 
             # await loot screen if passed escalation summary screen
             # ===========================================================================
-            if program_mode == 'WAIT_ESCAL_LOOT':
+            elif program_mode == 'WAIT_ESCAL_LOOT':
 
                 # read loot screen if available
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
@@ -519,7 +546,7 @@ def main():
 
             # read escalation loot data if in loot screen
             # ===========================================================================
-            if program_mode == 'IN_ESCAL_LOOT':
+            elif program_mode == 'IN_ESCAL_LOOT':
 
                 # the only way to detect error (someone skipping loot accidentally) is to check for this piece
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
@@ -529,8 +556,10 @@ def main():
 
                     system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode = 'RAMSGATE'    
-                    forms.fill_basic_form(loot_data)
+                    program_mode = 'RAMSGATE'
+                    
+                    forms.token_form_basic_submit(loot_data)
+                    forms.escalation_form_submit(loot_data)
 
 
                 # error if we can't establish loot screen anymore

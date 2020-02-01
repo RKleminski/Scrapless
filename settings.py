@@ -353,10 +353,16 @@ try:
                   int(ASP_CONF['escalation']['lobby_slice']['width_end'] * X_SCALE)]
 
 
-    ESCAL_RANK_SLC = [int(ASP_CONF['escalation']['rank_slice']['height_start'] * Y_SCALE),
-                    int(ASP_CONF['escalation']['rank_slice']['height_end'] * Y_SCALE),
-                    int(ASP_CONF['escalation']['rank_slice']['width_start'] * X_SCALE),
-                    int(ASP_CONF['escalation']['rank_slice']['width_end'] * X_SCALE)]
+    ESCAL_RANK_SLC_13 = [int(ASP_CONF['escalation']['rank_slice_13']['height_start'] * Y_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_13']['height_end'] * Y_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_13']['width_start'] * X_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_13']['width_end'] * X_SCALE)]
+
+
+    ESCAL_RANK_SLC_50 = [int(ASP_CONF['escalation']['rank_slice_50']['height_start'] * Y_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_50']['height_end'] * Y_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_50']['width_start'] * X_SCALE),
+                    int(ASP_CONF['escalation']['rank_slice_50']['width_end'] * X_SCALE)]
 
 
     ESCAL_SUMM_SLC = [int(ASP_CONF['escalation']['summary_slice']['height_start'] * Y_SCALE),
@@ -373,7 +379,7 @@ try:
     LOG.info('Escalation recognition configuation loaded successfully.')
 
 except Exception:
-    LOG.info('An error has occured while reading the ESCALATION section of the config: ')
+    LOG.exception('An error has occured while reading the ESCALATION section of the config: ')
     sys.exit(1)
 
 
@@ -429,7 +435,7 @@ try:
                     int(ASP_CONF['trial']['result_slice']['width_start'] * X_SCALE),
                     int(ASP_CONF['trial']['result_slice']['width_end'] * X_SCALE)]
 
-    
+
     BHMT_TRIAL_SLC = [int(ASP_CONF['trial']['behemoth_slice']['height_start'] * Y_SCALE),
                     int(ASP_CONF['trial']['behemoth_slice']['height_end'] * Y_SCALE),
                     int(ASP_CONF['trial']['behemoth_slice']['width_start'] * X_SCALE),
@@ -453,7 +459,7 @@ except Exception:
 try:
 
     OVERLAY_ON = CONF['overlay']['enable'] == 'Yes'
-    OVERLAY_TRANSPARENCY = float(CONF['overlay']['transparency']) / 100.0
+    OVERLAY_OPACITY = float(CONF['overlay']['opacity']) / 100.0
 
     OVERLAY_X = CONF['overlay']['position']['X']
     OVERLAY_Y = CONF['overlay']['position']['Y']
