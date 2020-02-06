@@ -1,10 +1,10 @@
 {
     "lobby":{
         "behemoth_slice":{
-            "height_start":165,
+            "height_start":160,
             "height_end":203,
-            "width_start":1395,
-            "width_end":1800
+            "width_start":1390,
+            "width_end":1880
         },
         "slice":{
             "height_start":865,
@@ -14,7 +14,7 @@
         },
         "threat_slice":{
             "height_start":207,
-            "height_end":233,
+            "height_end":234,
             "width_start":1405,
             "width_end":1440
         },
@@ -30,7 +30,7 @@
             "height_start":10,
             "height_end":50,
             "width_start":95,
-            "width_end":590
+            "width_end":460
         },
         "slice":{
             "height_start":45,

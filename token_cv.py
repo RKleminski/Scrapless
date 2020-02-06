@@ -6,6 +6,29 @@ import pyautogui
 
 from settings import TOKEN_SLC, TOKEN_COUNT_CORD
 
+
+def trime_white(image, border):
+
+    # negate the image bit-wise
+    bit = cv2.bitwise_not(image)
+
+    # get the non-zero coordinates
+    nonzero = np.nonzero(bit)
+
+    # if there are such coordinates, get the min and max points
+    if bit.any():
+        minx = min(nonzero[1])
+        maxx = max(nonzero[1])
+
+        miny = min(nonzero[0])
+        maxy = max(nonzero[0])
+
+        # crop the image while keeping a slight border around it
+        image = image[(miny-border):(maxy+border),(minx-border):(maxx+border)].copy()
+
+    # return the input image
+    return image
+
 '''
 Function for detecting a template element on the provided image
 Requires a screen grab, slice coordinates, target template and precision
@@ -56,14 +79,16 @@ def read_threat_level(screen_grab, slice):
     # most important here is the upscaling, followed by binarisation and inversion
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
     
-    width = int(image_slice.shape[1] * 14)
-    height = int(image_slice.shape[0] * 15)
+    width = int(image_slice.shape[1] * 29)
+    height = int(image_slice.shape[0] * 30)
     dim = (width, height)
 
     image_slice = cv2.resize(image_slice, dim, interpolation=cv2.INTER_AREA)
     
-    ret, ocr_image = cv2.threshold(image_slice, 252, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, 254, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
+
+    ocr_image = trime_white(ocr_image, 30)
 
     # read the threat level
     threat = pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=0123456789')
@@ -136,6 +161,8 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     if inverse:
         image_slice = cv2.bitwise_not(image_slice)
     ret, ocr_image = cv2.threshold(image_slice, 150, 255, cv2.THRESH_BINARY)
+
+    ocr_image = trime_white(ocr_image, 10)
 
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image, config=tess_config)

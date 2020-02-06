@@ -35,7 +35,7 @@ def lobby_detect(screen_grab):
                 return 'ESCAL', escalation_level[0]
 
         # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, tess_config=stng.TESS_CONF)
+        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
 
         # if the name is actually a tier of trials, return that
         if behemoth_name in ['Trial Normal', 'Trial Dauntless']:
