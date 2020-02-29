@@ -8,6 +8,7 @@ import os
 
 from datetime import datetime
 
+scrap_ver = '0.9.6'
 
 '''
 Function for retrieving the logger, configured to separately handle
@@ -106,9 +107,9 @@ LOG = get_logger()
 # WELCOME MESSAGE
 # ====================
 #
-print('=============================')
-print('=== WELCOME TO SCRAPLESS! ===')
-print('=============================')
+print('===========================================')
+print(f'=== WELCOME TO SCRAPLESS {scrap_ver} ! ===')
+print('===========================================')
 print('\n')
 
 

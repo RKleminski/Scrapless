@@ -12,8 +12,6 @@ Receives threat level, returns hunt tier associated with it
 '''
 def get_hunt_tier(threat_level):
 
-    threat_level = int(threat_level)
-
     if threat_level <= 7:
         return 'Neutral/Elemental'
     elif threat_level <= 12:
@@ -53,6 +51,7 @@ to reduce it to the basic "species".
 def trim_behemoth_name(name):
 
     name = name.replace(' (Heroic)', '')
+    name = name.replace(' Patrol', '')
     name_vec = name.split(' ')
 
     if name_vec[0] != 'Defeated':
@@ -79,15 +78,16 @@ Easter egg function
 Returns a random text line to hype a player before trials
 Mixes in less encouraging lines for Dauntless trials, to mess with people
 '''
-def trial_hype_line(target_name):
+def trial_hype_line(threat_level):
+
+    target_name = 'Dauntless Trial' if threat_level == 22 else 'Normal Trial'
 
     hype_lines = [
         'You got it, skipper!',
-        'First stagger to the right, and straight on till victory!',
         "Don't even need a silver sword for this one!"
         ]
 
-    if target_name == 'Trial Dauntless':
+    if threat_level == 22:
 
         hype_lines = [
             *hype_lines,
@@ -103,15 +103,14 @@ Easter egg function
 Returns a random text line to celebrate player victory in trials
 Mixes in more weary and less happy lines for Dauntless trials
 '''
-def trial_victory_line(target_name):
+def trial_victory_line(threat_level):
 
     victory_lines = [
         'Executed with impunity!',
-        'Another abomination cleansed from our lands.',
         'The bigger the beast, the greater the glory.'
     ]
 
-    if target_name == 'Trial Dauntless':
+    if threat_level == 22:
 
         victory_lines = [
             *victory_lines,
@@ -126,19 +125,19 @@ Easter egg function
 Returns a random defeat line mourning player loss in trials
 Mixes in less charitable ones for Dauntless trials
 '''
-def trial_defeat_line(target_name):
+def trial_defeat_line(threat_level):
 
     defeat_lines = [
         'Sometimes the hero dies in the end. Just ask War.',
-        'Y O U   D I E D',
-        'You either die a Recruit, or live long enough to become a Slayer'
+        'You either die a Recruit, or live long enough to become a Slayer.'
     ]
 
-    if target_name == 'Trial Dauntless':
+    if threat_level == 22:
 
         defeat_lines = [
             *defeat_lines,
             'More dust, more ashes, more disappointment.',
+            'Y O U   D I E D',
         ]
 
     return random.choice(defeat_lines)

@@ -88,13 +88,13 @@ def read_threat_level(screen_grab, slice):
     ret, ocr_image = cv2.threshold(image_slice, 254, 255, cv2.THRESH_BINARY)
     ocr_image = cv2.bitwise_not(ocr_image)
 
-    ocr_image = trime_white(ocr_image, 30)
+    ocr_image = trime_white(ocr_image, 25)
 
     # read the threat level
     threat = pytesseract.image_to_string(ocr_image, config='--psm 13 -c tessedit_char_whitelist=0123456789')
 
     # return the threat level
-    return threat if threat != '' else 0
+    return int(threat) if threat != '' else 0
 
 
 '''
@@ -160,9 +160,9 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None):
     # thresholding to increase tesseract's ability to read the image
     if inverse:
         image_slice = cv2.bitwise_not(image_slice)
-    ret, ocr_image = cv2.threshold(image_slice, 150, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, 125, 255, cv2.THRESH_BINARY)
 
-    ocr_image = trime_white(ocr_image, 10)
+    ocr_image = trime_white(ocr_image, 15)
 
     # read the behemoth name
     return pytesseract.image_to_string(ocr_image, config=tess_config)

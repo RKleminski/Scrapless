@@ -37,10 +37,6 @@ def lobby_detect(screen_grab):
         # determine behemoth name if method didn't exit with escalation level
         behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
 
-        # if the name is actually a tier of trials, return that
-        if behemoth_name in ['Trial Normal', 'Trial Dauntless']:
-            return 'TRIAL', behemoth_name
-
         # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
         behemoth_name = fuzzy_behemoth(behemoth_name)
@@ -158,7 +154,7 @@ Returns the overlay instance and list of labels to keep track of
 def overlay_setup(overlay_labels):
 
     # draw new overlay
-    line = 'SCRAPLESS'
+    line = f'SCRAPLESS {stng.scrap_ver}'
     color = stng.OVERLAY_COLOR_INFO
     bg_color= stng.OVERLAY_COLOR_BG
 
@@ -256,7 +252,6 @@ def main():
             # pause between captures
             time.sleep(1)
 
-
             # update overlay and ensure it stays on top
             if stng.OVERLAY_ON:
                 overlay.master.update()
@@ -265,7 +260,6 @@ def main():
 
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
-
 
             # read for lobby screen if last seen in ramsgate
             # ===========================================================================
@@ -307,24 +301,25 @@ def main():
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
                     threat_level, hunt_type = lobby_reader(screen_grab)
 
-                    # inform user if retrieved hunt details are invalid
-                    if utils.validate_hunt(threat_level, target_name):
+                    # determine between a Hunt and a Trial
+                    if threat_level <= 17:
 
-                        system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                        program_mode = 'IN_HUNT'
-                        
-                    else:
+                        # inform user if retrieved hunt details are invalid
+                        if utils.validate_hunt(threat_level, target_name):
 
-                        system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                        program_mode = 'RAMSGATE'
+                            system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
+                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                            program_mode = 'IN_HUNT'
+                            
+                        else:
 
+                            system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
+                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+                            program_mode = 'RAMSGATE'
 
-                # if Trial detected, proceed
-                elif program_mode == 'TRIAL':
+                    else: 
 
-                        system_message = utils.trial_hype_line(target_name)
+                        system_message = utils.trial_hype_line(threat_level)
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
                         program_mode = 'IN_TRIAL'
 
@@ -397,12 +392,12 @@ def main():
                     # print a line depending on victory or defeat
                     if behemoth_name == 'Defeated':
 
-                        system_message = utils.trial_defeat_line(target_name)
+                        system_message = utils.trial_defeat_line(threat_level)
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     else:
 
-                        system_message = utils.trial_victory_line(target_name)
+                        system_message = utils.trial_victory_line(threat_level)
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
                     # return to normal operation of the program
