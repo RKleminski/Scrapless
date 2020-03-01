@@ -35,7 +35,7 @@ def lobby_detect(screen_grab):
                 return 'ESCAL', escalation_level[0]
 
         # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF)
+        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=30)
 
         # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
@@ -87,14 +87,14 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
 
 
     # check for expected behemoth name and progress accordingly
-    if behemoth_name == loot_behemoth_name:
+    if behemoth_name == loot_behemoth_name or behemoth_name in ['Neutral', 'Blaze', 'Frost', 'Terra', 'Shock', 'Dire', 'Heroic', 'Heroic+']:
         
         loot_data = {
             'drop': if_drop,
             'hunt_time': hunt_time,
             'hunt_type': hunt_type,
             'hunt_tier': hunt_tier,
-            'threat_level': threat_level,
+            'threat_level': str(threat_level),
             'behemoth_name': behemoth_name,
             'patch_ver': stng.GAME_VER,
             'user': stng.USER
