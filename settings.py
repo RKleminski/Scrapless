@@ -27,12 +27,12 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
     stream_handler.setFormatter(log_formatter)
     log.addHandler(stream_handler)
 
-    file_handler_info = logging.FileHandler(LOG_FILE_INFO, mode='w')
+    file_handler_info = logging.FileHandler(LOG_FILE_INFO, mode='a')
     file_handler_info.setFormatter(log_formatter)
     file_handler_info.setLevel(logging.INFO)
     log.addHandler(file_handler_info)
 
-    file_handler_error = logging.FileHandler(LOG_FILE_ERROR, mode='w')
+    file_handler_error = logging.FileHandler(LOG_FILE_ERROR, mode='a')
     file_handler_error.setFormatter(log_formatter)
     file_handler_error.setLevel(logging.ERROR)
     #log.addHandler(file_handler_error)
