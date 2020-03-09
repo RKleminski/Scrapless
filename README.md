@@ -60,7 +60,7 @@ The idea behind Scrapless is simple: it uses image recognition and Optical Chara
 
     a) What is your main monitor? On Windows systems (which you have to use to play Dauntless) it is the one where all games will run by default, and which has a more fully fledged Task Bar. You can always check which screen is your main in system settings.
 
-2. In the event of Airship Lobby being found on the screenshot, it a few quick procedures will be launched to get hunt type (Patrol/Pursuit), Behemoth name and Threat Level. These are saved to memory for later use. Until the hunt concludes, this part of the program won't run anymore.
+2. In the event of Airship Lobby being found on the screenshot, a few quick procedures will be launched to get hunt type (Patrol/Pursuit), Behemoth name and Threat Level. These are saved to memory for later use. Until the hunt concludes, this part of the program won't run anymore.
 
 3. In the event of Loot screen being detected, the program will again retrieve behemoth name, along with information on whether or not the token appears in the loot (they always take the top spot, making this task easy). From there one, one of the following happens:
 
