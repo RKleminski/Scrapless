@@ -21,9 +21,9 @@
       "X": 1420
     },
     "output":{
-      "max_lines": 4,
+      "max_lines": 3,
       "font": "Calibri Bold",
-      "font-size": 9
+      "font-size": 8
     },
     "colors":{
       "background": "#000000",

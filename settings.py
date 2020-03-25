@@ -8,7 +8,7 @@ import os
 
 from datetime import datetime
 
-scrap_ver = '0.9.61'
+scrap_ver = '0.9.7'
 
 '''
 Function for retrieving the logger, configured to separately handle
@@ -144,8 +144,29 @@ try:
 
     LOG.info('SETUP: Valid hunt references loaded.')
 
+    ELEMENTS = ['Blaze', 'Frost', 'Shock', 'Terra', 'Neutral', 'Umbral', 'Radiant']
+    ESCAL_TIERS = [f'{elem} {tier}' for elem in ELEMENTS for tier in ['Escalation 1-13', 'Escalation 10-50']]
+
 except Exception:
     LOG.exception('An error occured while reading the hunts.json file: ')
+    sys.exit(1)
+
+
+# ====================
+# READING HUNT DROPS
+# ====================
+#
+try:
+    DROP_PTH = './data/json/drop_list.json'
+
+    # read file of allowed hunts
+    with open(DROP_PTH, 'r') as hunt_file:
+        DROP = json.load(hunt_file)
+
+    LOG.info('SETUP: Valid hun drop lists loaded.')
+
+except Exception:
+    LOG.exception('An error occured while reading the drop_list.json file: ')
     sys.exit(1)
 
 
@@ -297,7 +318,7 @@ except Exception:
 #
 try:
 
-    BHMT_LOOT_SLC = [int(ASP_CONF['loot']['behemoth_slice']['height_start'] * Y_SCALE),
+    LOOT_BHMT_SLC = [int(ASP_CONF['loot']['behemoth_slice']['height_start'] * Y_SCALE),
                     int(ASP_CONF['loot']['behemoth_slice']['height_end'] * Y_SCALE),
                     int(ASP_CONF['loot']['behemoth_slice']['width_start'] * X_SCALE),
                     int(ASP_CONF['loot']['behemoth_slice']['width_end'] * X_SCALE)]
@@ -313,28 +334,25 @@ try:
     new_size = ( int(LOOT_IMG.shape[1] * X_SCALE),  int(LOOT_IMG.shape[0] * Y_SCALE))
     LOOT_IMG = cv2.resize(LOOT_IMG, new_size)
 
+    BREAK_IMG = cv2.imread(f'./data/targets/break_parts/{A_RATIO_PATH}.png', 0)
+    new_size = ( int(BREAK_IMG.shape[1] * X_SCALE),  int(BREAK_IMG.shape[0] * Y_SCALE))
+    BREAK_IMG = cv2.resize(BREAK_IMG, new_size)
 
-    TIME_SLC = [int(ASP_CONF['loot']['time_slice']['height_start'] * Y_SCALE),
+    LOOT_TIME_SLC = [int(ASP_CONF['loot']['time_slice']['height_start'] * Y_SCALE),
             int(ASP_CONF['loot']['time_slice']['height_end'] * Y_SCALE),
             int(ASP_CONF['loot']['time_slice']['width_start'] * X_SCALE),
             int(ASP_CONF['loot']['time_slice']['width_end'] * X_SCALE)]
 
 
-    TOKEN_SLC = [int(ASP_CONF['loot']['token_slice']['height_start'] * Y_SCALE),
-                int(ASP_CONF['loot']['token_slice']['height_end'] * Y_SCALE),
-                int(ASP_CONF['loot']['token_slice']['width_start'] * X_SCALE),
-                int(ASP_CONF['loot']['token_slice']['width_end'] * X_SCALE)]
+    LOOT_BASE_SLC = [int(ASP_CONF['loot']['base_drop_slice']['height_start'] * Y_SCALE),
+                int(ASP_CONF['loot']['base_drop_slice']['height_end'] * Y_SCALE),
+                int(ASP_CONF['loot']['base_drop_slice']['width_start'] * X_SCALE),
+                int(ASP_CONF['loot']['base_drop_slice']['width_end'] * X_SCALE)]
 
-
-    TOKEN_IMG = cv2.imread(f'./data/targets/token/{A_RATIO_PATH}_token.png', 0)
-    new_size = ( int(TOKEN_IMG.shape[1] * X_SCALE), int(TOKEN_IMG.shape[0] * Y_SCALE))
-    TOKEN_IMG = cv2.resize(TOKEN_IMG, new_size)
-
-
-    TOKEN_COUNT_CORD = [int(ASP_CONF['loot']['token_count_slice']['y_offset'] * Y_SCALE),
-                        int(ASP_CONF['loot']['token_count_slice']['x_offset'] * Y_SCALE),
-                        int(ASP_CONF['loot']['token_count_slice']['height'] * X_SCALE),
-                        int(ASP_CONF['loot']['token_count_slice']['width'] * X_SCALE)]
+    LOOT_BONS_SLC = [int(ASP_CONF['loot']['bonus_drop_slice']['height_start'] * Y_SCALE),
+                int(ASP_CONF['loot']['bonus_drop_slice']['height_end'] * Y_SCALE),
+                int(ASP_CONF['loot']['bonus_drop_slice']['width_start'] * X_SCALE),
+                int(ASP_CONF['loot']['bonus_drop_slice']['width_end'] * X_SCALE)]
 
     LOG.info('Loot recognition configuration loaded successfully.')
 
@@ -482,3 +500,5 @@ try:
 except Exception:
     LOG.exception('An error has occured while reading the OVERLAY section of the config: ')
     sys.exit(1)
+
+print('\n')

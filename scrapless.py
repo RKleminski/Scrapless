@@ -14,6 +14,9 @@ import token_cv as cvt
 import utils
 import forms
 
+import numpy as np
+import cv2
+import re
 
 '''
 Detects the lobby and determines the type of a lobby the player is currently in
@@ -28,14 +31,14 @@ def lobby_detect(screen_grab):
         escalation_level = cvt.read_escalation_level(screen_grab, stng.ESCAL_LOBBY_SLC)
 
         if escalation_level != '':
-            escalation_level = process.extractOne(escalation_level, ['Escalation 1-13', 'Escalation 10-50'], scorer=fuzz.ratio, score_cutoff=90)
+            escalation_level = process.extractOne(escalation_level, stng.ESCAL_TIERS, scorer=fuzz.ratio, score_cutoff=90)
 
             # return escalation mode and name
             if escalation_level != None:
                 return 'ESCAL', escalation_level[0]
 
         # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=30)
+        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=10)
 
         # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
@@ -63,10 +66,10 @@ def lobby_reader(screen_grab):
 Helper function which wraps all the loot image detection and OCR under one name,
 to clean up the main file code a little
 '''
-def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
+def loot_screen_reader(screen_grab, threat_level, hunt_type, behemoth_name, overlay_labels):
 
     # read the behemoth name on screen
-    loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOOT_SLC, inverse=True, tess_config=stng.TESS_CONF)
+    loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.LOOT_BHMT_SLC, inverse=True, tess_config=stng.TESS_CONF)
     loot_behemoth_name = utils.trim_behemoth_name(loot_behemoth_name)
 
     # finish early if the party has been defeated 
@@ -76,61 +79,77 @@ def loot_reader(screen_grab, threat_level, hunt_type, behemoth_name):
     # fuzzy match behemoth name to account for small OCR errors
     loot_behemoth_name = fuzzy_behemoth(loot_behemoth_name)
 
-    # determine if we had a token drop
-    if_drop = 'Yes' if cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.95) else 'No'
-
-    # determine hunt category
-    hunt_tier = utils.get_hunt_tier(threat_level)
-
-    # read hunt time
-    hunt_time = cvt.read_hunt_time(screen_grab, stng.TIME_SLC)
-
 
     # check for expected behemoth name and progress accordingly
     if behemoth_name == loot_behemoth_name or behemoth_name in ['Neutral', 'Blaze', 'Frost', 'Terra', 'Shock', 'Dire', 'Heroic', 'Heroic+']:
         
-        loot_data = {
-            'drop': if_drop,
-            'hunt_time': hunt_time,
-            'hunt_type': hunt_type,
-            'hunt_tier': hunt_tier,
-            'threat_level': str(threat_level),
-            'behemoth_name': behemoth_name,
-            'patch_ver': stng.GAME_VER,
-            'user': stng.USER
-        }
+        system_message = f'Valid screenshot captured, you may leave the current screen.'
+        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
+
+        # determine hunt category
+        hunt_tier = utils.get_hunt_tier(threat_level)
+
+        # read hunt time
+        hunt_time = cvt.read_hunt_time(screen_grab, stng.LOOT_TIME_SLC)
+
+        loot_data = loot_drops_reader(screen_grab, hunt_type, hunt_tier, threat_level, loot_behemoth_name)
 
         return 'OK', loot_data
     else:
         return 'ERROR', {'lobby_behemoth': behemoth_name, 'loot_behemoth': loot_behemoth_name}
 
 
-'''
-Processes loot data from escalation loot screen
-and returns appropriate status once done
-'''
-def escal_loot_reader(screen_grab, escalation_tier):
-    
-    # determine if we had a token drop
-    if_drop = cvt.detect_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
-    token_count = '0'
+def loot_drops_reader(screen_grab, hunt_type, hunt_tier, threat_level, behemoth_name):
 
-    if if_drop:
-        token_loc = cvt.locate_element(screen_grab, stng.TOKEN_SLC, stng.TOKEN_IMG, prec=0.9)
-        token_count = cvt.read_token_count(screen_grab, token_loc).replace('x', '')
+    loot_data = []
 
-    if_drop = 'Yes' if if_drop else 'No'
-        
-    loot_data = {
-        'drop': if_drop,
-        'drop_count': token_count,
-        'hunt_tier': escalation_tier,
-        'patch_ver': stng.GAME_VER,
-        'user': stng.USER
-    }
+    if 'Escalation' in behemoth_name:
+        drop_list = [item for sublist in list(stng.DROP.values()) for item in sublist]
+        base_rarity = ['Common', 'Rare', 'Epic', 'Artifact'] * len(stng.DROP)
+    else:
+        drop_list = stng.DROP[behemoth_name]
+        base_rarity = ['Common', 'Rare', 'Epic', 'Artifact']
+
+    # loop through areas of loot screen
+    for loot_slice in [ stng.LOOT_BASE_SLC, stng.LOOT_BONS_SLC ]:
+
+        # check if part breaks are there
+        if cvt.detect_element(screen_grab, stng.LOOT_BASE_SLC, stng.BREAK_IMG, prec=0.9):
+                
+                # if so, omit them
+                part_coord = cvt.locate_element(screen_grab, stng.LOOT_BASE_SLC, stng.BREAK_IMG, prec=0.9)
+                loot_slice[1] = part_coord[1]
+
+        # read all text from the area
+        loot_drops = cvt.read_loot_section(screen_grab, loot_slice)
+
+        for line in loot_drops.splitlines():
+
+            loot_row = {
+                'hunt_type': hunt_type,
+                'hunt_tier': hunt_tier,
+                'threat_level': str(threat_level),
+                'behemoth_name': behemoth_name,
+                'patch_ver': stng.GAME_VER,
+                'user': stng.USER
+            }
+
+            for drop in drop_list:
+
+                if drop in line:
+                    loot_row['drop_count'] = re.sub("[^0-9]", "", line.split(" ")[0])
+                    loot_row['drop_name'] = drop
+                    loot_row['drop_rarity'] = base_rarity[drop_list.index(drop)]
+                    loot_data.append(loot_row)
+
+            if 'Cell' in line:
+                loot_row['drop_count'] = re.sub("[^0-9]", "", line.split(" ")[0])
+                loot_row['drop_name'] = line.split(" ", 1)[1]
+                loot_row['drop_rarity'] = 'Uncommon' if '+1' in line else 'Rare'
+                loot_data.append(loot_row)
 
     return loot_data
-    
+
 
 '''
 When proivided with a behemoth name, returns the closes fuzzy match from the list
@@ -243,7 +262,6 @@ def main():
     # variable to control the current operations of the program
     program_mode = 'RAMSGATE'
 
-
     # work in the loop of image recognition
     while True:
 
@@ -260,6 +278,7 @@ def main():
 
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
+
 
             # read for lobby screen if last seen in ramsgate
             # ===========================================================================
@@ -409,7 +428,7 @@ def main():
             elif program_mode == 'IN_HUNT':
 
                 # if loot screen detected, set program to read loot
-                if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
+                if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.8):
                     
                     system_message = f'Loot screen detected, processing...'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
@@ -421,7 +440,7 @@ def main():
             elif program_mode == 'IN_LOOT':
 
                 # read loot data
-                loot_status, loot_data = loot_reader(screen_grab, threat_level, hunt_type, target_name)
+                loot_status, loot_data = loot_screen_reader(screen_grab, threat_level, hunt_type, target_name, overlay_labels)
 
                 # accept defeat and reset program mode
                 if loot_status == 'DEFEAT':
@@ -434,20 +453,12 @@ def main():
                 # otherwise, if everything is fine, submit data
                 elif loot_status == 'OK':
 
-                    if int(loot_data['threat_level']) == 1:
+                    for data in loot_data:
+                        forms.loot_drop_submit(data)
 
-                        system_message = 'INFO: Insufficient threat level detected. Data will not be submitted.'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                        program_mode = 'RAMSGATE'
-
-                    elif int(loot_data['threat_level']) > 1:
-
-                        system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                        program_mode = 'RAMSGATE'
-
-                        forms.token_form_basic_submit(loot_data)
-                        forms.token_form_rich_submit(loot_data)
+                    system_message = f'Loot data submitted.\n'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                    program_mode = 'RAMSGATE'
 
 
                 # otherwise, if error occured, retry
@@ -488,7 +499,7 @@ def main():
             elif program_mode == 'IN_ESCAL_SUMM':
 
                 # read rank of final escalation round
-                summ_slice = stng.ESCAL_RANK_SLC_13 if target_name == 'Escalation 1-13' else stng.ESCAL_RANK_SLC_50
+                summ_slice = stng.ESCAL_RANK_SLC_13 if 'Escalation 1-13' in target_name else stng.ESCAL_RANK_SLC_50
                 escal_rank = cvt.read_escalation_rank(screen_grab, summ_slice)
 
 
@@ -546,16 +557,18 @@ def main():
                 # the only way to detect error (someone skipping loot accidentally) is to check for this piece
                 if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
 
-                    # read the loot screen
-                    loot_data = escal_loot_reader(screen_grab, target_name)
+                    system_message = f'Valid screenshot captured, you may leave the current screen.'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
 
-                    system_message = f'Submitted data: {" - ".join(loot_data.values())}\n'
+                    # read the loot screen
+                    loot_data = loot_drops_reader(screen_grab, target_name, target_name, target_name[-2:], target_name)
+
+                    for data in loot_data:
+                        forms.loot_drop_submit(data)
+
+                    system_message = system_message = f'Loot data submitted.\n'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                     program_mode = 'RAMSGATE'
-                    
-                    forms.token_form_basic_submit(loot_data)
-                    forms.escalation_form_submit(loot_data)
-
 
                 # error if we can't establish loot screen anymore
                 else:

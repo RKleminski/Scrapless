@@ -1,26 +1,26 @@
 {
     "lobby":{
         "behemoth_slice":{
-            "height_start":160,
-            "height_end":203,
-            "width_start":1390,
-            "width_end":1880
+            "height_start":50,
+            "height_end":110,
+            "width_start":1375,
+            "width_end":1900
         },
         "slice":{
-            "height_start":865,
-            "height_end":915,
-            "width_start":1445,
-            "width_end":1755
+            "height_start":870,
+            "height_end":920,
+            "width_start":1430,
+            "width_end":1740
         },
         "threat_slice":{
-            "height_start":207,
-            "height_end":234,
-            "width_start":1405,
-            "width_end":1440
+            "height_start":120,
+            "height_end":160,
+            "width_start":1825,
+            "width_end":1870
         },
         "hunt_type_slice":{
             "height_start":995,
-            "height_end":1045,
+            "height_end":1050,
             "width_start":730,
             "width_end":1200
         }
@@ -28,7 +28,7 @@
     "loot": {
         "behemoth_slice":{
             "height_start":10,
-            "height_end":50,
+            "height_end":55,
             "width_start":95,
             "width_end":460
         },
@@ -44,25 +44,25 @@
             "width_start":220,
             "width_end":305
         },    
-        "token_slice":{
-            "height_start":274,
-            "height_end":899,
-            "width_start":90,
-            "width_end":165
+        "base_drop_slice":{
+            "height_start":272,
+            "height_end":924,
+            "width_start":159,
+            "width_end":491
         },
-        "token_count_slice":{
-            "y_offset": 0,
-            "x_offset": -15,
-            "height": 30,
-            "width": 15
+        "bonus_drop_slice":{
+            "height_start":275,
+            "height_end":924,
+            "width_start":580,
+            "width_end":912
         }
     },
     "escalation":{
         "lobby_slice":{
-            "height_start":95,
-            "height_end":160,
-            "width_start":1330,
-            "width_end":1805
+            "height_start":50,
+            "height_end":110,
+            "width_start":1375,
+            "width_end":1800
         },
         "summary_slice":{
             "height_start":345,
