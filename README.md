@@ -59,15 +59,20 @@ Please read the list below to know which screens are of interest for *Scrapless*
 The idea behind Scrapless is simple: it uses image recognition and Optical Character Recognition (reading text off images) to automatically gather the data off your screen as you play. This is achieved by a loop of operations:
 
 1. Once started, Scrapless will begin taking snapshots of your main monitor every second. This delay can grow longer, as it starts after all current image processing has concluded.
-	-What is your main monitor? On Windows systems (which you have to use to play Dauntless) it is the one where all games will run by default, and which has a more fully fledged Task 	Bar. You can always check which screen is your main in system settings.
+
+	- What is your main monitor? On Windows systems (which you have to use to play Dauntless) it is the one where all games will run by default, and which has a more fully fledged Task Bar. You can always check which screen is your main in system settings.
 
 2. *Scrapless* will detect the Airship Lobby of any type of hunt and read the screen for Behemoth name, Threat level and Patrol/Pursuit type of a hunt.
 
-3. In case of Escalation, the program has to first verify that you beat the last monster available (by reading the final rank). Once that is done, you can move to the Loot screen.
+3. On Loot screen, the program will try to read all eligible Slay drops, and their quantity, from the loot list. Behemoth name is captured once again for verification purposes (for non-Escalation hunts).
 
-4. On Loot screen, the program will simply try and detect the Bounty Token icon and the drop quantity. Behemoth name is captured once again for verification purposes (for non-Escalation hunts).
+	- This is a pretty long process, but the program will inform you as soon as it has captured valid screenshot. The processing can happen in the background, so you can leave the loot screen at that point.
+
+4. In case of Escalation, the program has to first verify that you beat the last monster available (by reading the final rank). Once that is done, you can move to the Loot screen.
 
 5. *Scrapless* will also detect when you are drafting a Bounty and it will log the quality of said Bounty as well.
+
+	- Keep in mind taht "Searching for Hunt" bar at the top of the screen will prevent *Scrapless* from detecting Bounty drafting. Draft your bounties outside of the queue.
 
 # Bugs and issues
 
