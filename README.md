@@ -1,6 +1,6 @@
 # Scrapless
 Python script for automated data collection on Dauntless Slay Drops and Dauntless Bounty Rarities.
-The spreadsheets which tracks all the results and computes statistics are available [here](https://docs.google.com/spreadsheets/d/1wtdNR_wwfzliNhLvSw0MW-yoDe4uhLDuPJ0mL1y1Gps/edit#gid=1171610346) and [here](https://discordapp.com/channels/687198517621686288/688498239464407105/692458415380889642).
+The spreadsheets which tracks all the results and computes statistics are available [here](https://docs.google.com/spreadsheets/d/1wtdNR_wwfzliNhLvSw0MW-yoDe4uhLDuPJ0mL1y1Gps/edit?usp=sharing) and [here](https://docs.google.com/spreadsheets/d/1r1rZQWAa6DmLxfj6ZOe-o-Z6uOP3olP3UMwhcvgFwpk/edit?usp=sharing).
 
 # Requirements
 
