@@ -8,7 +8,7 @@ import os
 
 from datetime import datetime
 
-scrap_ver = '0.9.7'
+scrap_ver = '0.9.7.2'
 
 '''
 Function for retrieving the logger, configured to separately handle
