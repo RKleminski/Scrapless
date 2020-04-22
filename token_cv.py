@@ -147,7 +147,7 @@ Inverse parameter dictates whether a binary NOT should be applied to the entire 
 This is necessary to properly read behemoth names in lobby, but will throw your results 
 off in the loot screen
 '''
-def read_behemoth(screen_grab, slice, inverse=False, tess_config=None, trim_size=30):
+def read_behemoth(screen_grab, slice, inverse=False, tess_config=None, trim_size=30, thresh=130):
 
     # slice off the critical area from full-screen capture 
     image_slice = np.array(screen_grab)[slice[0]:slice[1], slice[2]:slice[3], :]
@@ -166,7 +166,7 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None, trim_size
     # thresholding to increase tesseract's ability to read the image
     if inverse:
         image_slice = cv2.bitwise_not(image_slice)
-    ret, ocr_image = cv2.threshold(image_slice, 100, 255, cv2.THRESH_BINARY)
+    ret, ocr_image = cv2.threshold(image_slice, thresh, 255, cv2.THRESH_BINARY)
 
     trim_image = trim_white(ocr_image, trim_size)
 

@@ -38,7 +38,7 @@ def lobby_detect(screen_grab):
                 return 'ESCAL', escalation_level[0]
 
         # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=10)
+        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=50, thresh=140)
 
         # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
@@ -69,7 +69,7 @@ to clean up the main file code a little
 def loot_screen_reader(screen_grab, threat_level, hunt_type, behemoth_name, overlay_labels):
 
     # read the behemoth name on screen
-    loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.LOOT_BHMT_SLC, inverse=True, tess_config=stng.TESS_CONF)
+    loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.LOOT_BHMT_SLC, inverse=True, tess_config=stng.TESS_CONF, thresh=100)
     loot_behemoth_name = utils.trim_behemoth_name(loot_behemoth_name)
 
     # finish early if the party has been defeated 
