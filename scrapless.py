@@ -4,8 +4,11 @@ import settings as stng
 import tkinter
 import pyautogui
 import sys
+import random
+import os
 
 from win32 import win32gui
+from uuid import uuid4
 import win32con
 
 from fuzzywuzzy import fuzz, process
@@ -66,7 +69,7 @@ def lobby_reader(screen_grab):
 Helper function which wraps all the loot image detection and OCR under one name,
 to clean up the main file code a little
 '''
-def loot_screen_reader(screen_grab, threat_level, hunt_type, behemoth_name, overlay_labels):
+def loot_screen_reader(screen_grab,hunt_data, overlay_labels):
 
     # read the behemoth name on screen
     loot_behemoth_name = cvt.read_behemoth(screen_grab, stng.LOOT_BHMT_SLC, inverse=True, tess_config=stng.TESS_CONF, thresh=100)
@@ -81,34 +84,58 @@ def loot_screen_reader(screen_grab, threat_level, hunt_type, behemoth_name, over
 
 
     # check for expected behemoth name and progress accordingly
-    if behemoth_name == loot_behemoth_name or behemoth_name in ['Neutral', 'Blaze', 'Frost', 'Terra', 'Shock', 'Dire', 'Heroic', 'Heroic+']:
+    if hunt_data['behemoth'] == loot_behemoth_name or hunt_data['behemoth'] in ['Neutral', 'Blaze', 'Frost', 'Terra', 'Shock', 'Dire', 'Heroic', 'Heroic+']:
         
         system_message = f'Valid screenshot captured, you may leave the current screen.'
         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
 
+        # overwrite behemoth name
+        hunt_data['behemoth'] = loot_behemoth_name
+
         # determine hunt category
-        hunt_tier = utils.get_hunt_tier(threat_level)
+        hunt_data['tier'] = utils.get_hunt_tier(hunt_data['threat'])
+
+        # determine death count
+        hunt_data['deaths'] = cvt.read_death_count(screen_grab, stng.LOOT_DEATH_SLC)
+
+        # check for Elite pass
+        hunt_data['elite'] = cvt.detect_element(screen_grab, stng.LOOT_ELITE_SLC, stng.ELITE_IMG)
 
         # read hunt time
-        hunt_time = cvt.read_hunt_time(screen_grab, stng.LOOT_TIME_SLC)
+        hunt_data['time'] = cvt.read_hunt_time(screen_grab, stng.LOOT_TIME_SLC)
 
-        loot_data = loot_drops_reader(screen_grab, hunt_type, hunt_tier, threat_level, loot_behemoth_name)
+        loot_data = loot_drops_reader(screen_grab, hunt_data)
 
         return 'OK', loot_data
     else:
-        return 'ERROR', {'lobby_behemoth': behemoth_name, 'loot_behemoth': loot_behemoth_name}
+        return 'ERROR', {'lobby_behemoth': hunt_data['behemoth'], 'loot_behemoth': loot_behemoth_name}
 
 
-def loot_drops_reader(screen_grab, hunt_type, hunt_tier, threat_level, behemoth_name):
+def loot_drops_reader(screen_grab, hunt_data):
 
-    loot_data = []
+    # retrieve list of possible drops
+    drop_list = stng.DROP_LIST[hunt_data['behemoth']]
+    
+    # add appropriate orbs to the drop list
+    if hunt_data['tier'] == 'Neutral/Elemental':
+        for orb_name in ['Neutral Orb', 'Shock Orb', 'Blaze Orb', 'Frost Orb', 'Terra Orb']:
+            drop_list[orb_name] = 'Common (Orb)'
+    if hunt_data['tier'] == 'Dire':
+        drop_list['Dull Arcstone'] = 'Uncommon (Orb)'
+    if hunt_data['tier'] in ['Heroic', 'Heroic+']:
+        drop_list['Shining Arcstone'] = 'Rare (Orb)'
 
-    if 'Escalation' in behemoth_name:
-        drop_list = [item for sublist in list(stng.DROP.values()) for item in sublist]
-        base_rarity = ['Common', 'Rare', 'Epic', 'Artifact'] * len(stng.DROP)
-    else:
-        drop_list = stng.DROP[behemoth_name]
-        base_rarity = ['Common', 'Rare', 'Epic', 'Artifact']
+    # determine slay loot roll count
+    slay_rolls = 2 + (3 - hunt_data['deaths']) + (2 * hunt_data['elite'])
+
+    # compensate for Elite loot bug
+    if hunt_data['tier'] == 'Heroic+' and hunt_data['behemoth'] not in ['Shrowd', 'Rezakiri'] and hunt_data['elite']:
+        slay_rolls -= 2
+
+    # array for applicable loot lines
+    loot_drops = []
+    slay_loot_drops = []
+
 
     # loop through areas of loot screen
     for loot_slice in [ stng.LOOT_BASE_SLC, stng.LOOT_BONS_SLC ]:
@@ -118,35 +145,131 @@ def loot_drops_reader(screen_grab, hunt_type, hunt_tier, threat_level, behemoth_
                 
                 # if so, omit them
                 part_coord = cvt.locate_element(screen_grab, stng.LOOT_BASE_SLC, stng.BREAK_IMG, prec=0.9)
-                loot_slice[1] = part_coord[1]
+                loot_slice[1] = loot_slice[0] + part_coord[1]
 
         # read all text from the area
-        loot_drops = cvt.read_loot_section(screen_grab, loot_slice)
+        loot_lines = cvt.read_loot_section(screen_grab, loot_slice)
 
-        for line in loot_drops.splitlines():
+        # iterate over read lines
+        for line in loot_lines.splitlines():
 
-            loot_row = {
-                'hunt_type': hunt_type,
-                'hunt_tier': hunt_tier,
-                'threat_level': str(threat_level),
-                'behemoth_name': behemoth_name,
-                'patch_ver': stng.GAME_VER,
-                'user': stng.USER
-            }
+            # ensure the line has some text
+            if line != '' and re.search('[a-zA-Z]', line):
 
-            for drop in drop_list:
+                # get the best cell match to verify if we are operating on a cell
+                cell_match = process.extractOne(line.split(' ', 2)[-1], stng.CELL_LIST, scorer=fuzz.ratio, score_cutoff=80)
 
-                if drop in line:
-                    loot_row['drop_count'] = re.sub("[^0-9]", "", line.split(" ")[0])
-                    loot_row['drop_name'] = drop
-                    loot_row['drop_rarity'] = base_rarity[drop_list.index(drop)]
-                    loot_data.append(loot_row)
+                # get a cell, if a cell is in the line
+                if cell_match is not None:
+                    drop = line.split(' ', 2)[-2] + ' ' + cell_match[0]
+                # get a fuzzy match to the possible drops otherwise
+                else:
+                    drop = fuzzy_drop(line.split(" ", 1)[-1], drop_list.keys())
 
-            if 'Cell' in line:
-                loot_row['drop_count'] = re.sub("[^0-9]", "", line.split(" ")[0])
-                loot_row['drop_name'] = line.split(" ", 1)[1]
-                loot_row['drop_rarity'] = 'Uncommon' if '+1' in line else 'Rare'
-                loot_data.append(loot_row)
+                # proceed with processing if we got a cell or a fuzzy match
+                if drop != '':
+
+                    # iteration until we can find the proper count
+                    # (this is in case of garbage in front of the string)
+                    for iter in range(0, len(line.split(' '))):
+
+                        # take a part of the string
+                        count_str = line.split(" ")[iter]
+
+                        # replace symbols we know tend to replace digits
+                        for character in stng.CONFUSION_DICT.keys():
+                            count_str = count_str.replace(character, stng.CONFUSION_DICT[character])
+
+                        # remove everything that isn't a number
+                        count_str = re.sub("[^0-9]", "", count_str[1:])
+
+                        # if we have proper string, jump out
+                        if count_str != '':
+                            break
+                        
+                    # get the drop number, omit the first character as it is whatever the program read "x" as
+                    count = int(count_str)
+                        
+                    # handle the number of the orbs
+                    if drop in stng.ORB_LIST:
+
+                        # when orbs were rolled together with patrol reward
+                        if count > 10 and count % 3 != 0:
+                            count -= 10
+
+                        # add non-patrol orbs to loot
+                        if count % 3 == 0:
+                            for iter in range(0, int(count/3)):
+                                loot_drops.append((drop, 3))
+
+                    # handle cell drops
+                    elif count >= 10:
+                        return 'TOO_MANY_DROPS'
+
+                    elif 'Cell' in drop:
+
+                        cell_pow = drop.split(' ')[0]
+
+                        # replace symbols we know tend to replace digits
+                        for character in stng.CONFUSION_DICT.keys():
+                            cell_pow = cell_pow.replace(character, stng.CONFUSION_DICT[character])
+
+                        drop = ' '.join([cell_pow, *drop.split(' ')[1:]])
+
+                        # add to slay drops
+                        for iter in range(0, count):
+                            slay_loot_drops.append((drop, count))
+
+
+                    # handle non-orb, non-cell drops
+                    else:
+
+                        # check single drop count expected through rarity
+                        count_div = 2 if drop_list[drop] == 'Epic' else 1
+
+                        # add to drops in appropriate increments
+                        for iter in range(0, int(count/count_div)):
+                            if drop_list[drop] == 'Artifact (Dye)':
+                                slay_loot_drops.append((drop, count_div))
+                            else:
+                                loot_drops.append((drop, count_div))
+
+
+    # draw a sample of loot rolls - this counteracts numerous Loot Screen bugs
+    num_samples = slay_rolls - len(slay_loot_drops) if len(slay_loot_drops) + len(loot_drops) < 2 * slay_rolls else slay_rolls*2 - len(slay_loot_drops)
+
+    # for safety, never sample for more than all remaining drops
+    num_samples = min(num_samples, len(loot_drops))
+
+    # randomly sample the remaining drops
+    loot_samples = random.sample(loot_drops, num_samples)
+
+    # add samples to slay drop list
+    slay_loot_drops.extend(loot_samples)
+
+    # prepare final loot output
+    loot_data = []
+
+    # create an entry for every acquired drop
+    for drop in slay_loot_drops:
+
+        name = drop[0]
+        count = drop[1]
+
+        loot_row = {
+            'hunt_type': hunt_data['type'],
+            'hunt_tier': hunt_data['tier'],
+            'threat_level': hunt_data['threat'],
+            'behemoth_name': hunt_data['behemoth'],
+            'patch_ver': stng.GAME_VER,
+            'user': stng.USER
+        }
+
+        loot_row['drop_count'] = count
+        loot_row['drop_name'] = name
+        loot_row['drop_rarity'] = ('Uncommon (Cell)' if '+1' in name else 'Rare (Cell)') if 'Cell' in name else drop_list[name]
+
+        loot_data.append(loot_row)
 
     return loot_data
 
@@ -164,6 +287,14 @@ def fuzzy_behemoth(behemoth_name):
         match = process.extractOne(behemoth_name, stng.HUNT.keys(), scorer=fuzz.ratio, score_cutoff=80)
         return '' if match is None else match[0]
 
+
+def fuzzy_drop(drop, drop_list):
+
+    if drop in drop_list:
+        return drop
+    else:
+        match = process.extractOne(drop, drop_list, scorer=fuzz.ratio, score_cutoff=80)
+        return '' if match is None else match[0]
 
 '''
 Sets up the initial window for Tkinter labels which form the overlay
@@ -262,6 +393,9 @@ def main():
     # variable to control the current operations of the program
     program_mode = 'RAMSGATE'
 
+    # dict for storing hunt data
+    hunt_data = {}
+
     # work in the loop of image recognition
     while True:
 
@@ -275,10 +409,8 @@ def main():
                 overlay.master.update()
                 overlay.master.lift()
 
-
             # capture the current state of the screen
             screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
-
 
             # read for lobby screen if last seen in ramsgate
             # ===========================================================================
@@ -288,7 +420,7 @@ def main():
                 error_count = 0
 
                 # check for lobby screen
-                program_mode, target_name = lobby_detect(screen_grab)
+                program_mode, hunt_data['behemoth'] = lobby_detect(screen_grab)
 
                 # if no lobby detected, check for bounty drafting
                 if program_mode == 'NO_LOBBY':
@@ -308,9 +440,9 @@ def main():
                 # if Escalation detected, wait for results screen
                 elif program_mode == 'ESCAL':
                     
-                    system_message = f'{target_name} lobby detected, awaiting result screen...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
-                    program_mode = 'IN_ESCAL'
+                    system_message = f'{hunt_data["behemoth"]} lobby detected, awaiting result screen...'
+                    # overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
+                    # program_mode = 'IN_ESCAL'
                 
 
                 # if Hunt detected, proceed to read lobby further
@@ -318,27 +450,27 @@ def main():
 
                     system_message = 'Hunt lobby detected, reading...'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    threat_level, hunt_type = lobby_reader(screen_grab)
+                    hunt_data['threat'], hunt_data['type'] = lobby_reader(screen_grab)
 
                     # determine between a Hunt and a Trial
-                    if threat_level <= 17:
+                    if hunt_data['threat'] <= 17:
 
                         # inform user if retrieved hunt details are invalid
-                        if utils.validate_hunt(threat_level, target_name):
+                        if utils.validate_hunt(hunt_data):
 
-                            system_message = f'Valid hunt detected: {target_name} T{threat_level} {hunt_type}, awaiting loot screen...'
+                            system_message = f'Valid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, awaiting loot screen...'
                             overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
                             program_mode = 'IN_HUNT'
                             
                         else:
 
-                            system_message = f'Invalid hunt detected: {target_name} T{threat_level} {hunt_type}, retrying...'
+                            system_message = f'Invalid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, retrying...'
                             overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                             program_mode = 'RAMSGATE'
 
                     else: 
 
-                        system_message = utils.trial_hype_line(threat_level)
+                        system_message = utils.trial_hype_line(hunt_data['threat'])
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
                         program_mode = 'IN_TRIAL'
 
@@ -440,15 +572,28 @@ def main():
             elif program_mode == 'IN_LOOT':
 
                 # read loot data
-                loot_status, loot_data = loot_screen_reader(screen_grab, threat_level, hunt_type, target_name, overlay_labels)
+                loot_status, loot_data = loot_screen_reader(screen_grab, hunt_data, overlay_labels)
 
                 # accept defeat and reset program mode
                 if loot_status == 'DEFEAT':
 
                     system_message = 'DEFEAT: The party has been defeated, no data will be submitted.\n'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+                    hunt_data = {}
                     program_mode = 'RAMSGATE'
 
+                # otherwise, if suspicious loot numbers, save screenshot for future reference
+                elif loot_data == 'TOO_MANY_DROPS':
+
+                    system_message = f'ERROR: Suspiciously big stack of loot. Screenshot saved, data won\'t be submitted.'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+
+                    path = './error_imgs/'
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    cv2.imwrite(f'path/{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
+
+                    program_mode = 'RAMSGATE'
 
                 # otherwise, if everything is fine, submit data
                 elif loot_status == 'OK':
@@ -458,6 +603,7 @@ def main():
 
                     system_message = f'Loot data submitted.\n'
                     overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                    hunt_data = {}
                     program_mode = 'RAMSGATE'
 
 
@@ -479,115 +625,7 @@ def main():
 
                         system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
-                        program_mode = 'RAMSGATE'
-                            
-
-            # await escalation summary screen if during escalation mode
-            # ===========================================================================
-            elif program_mode == 'IN_ESCAL':
-
-                # detect escalation summary screen
-                if cvt.detect_element(screen_grab, stng.ESCAL_SUMM_SLC, stng.ESCAL_SUMM_IMG):
-
-                    system_message = f'Escalation summary screen detected, processing...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    program_mode = 'IN_ESCAL_SUMM'
-
-
-            # process escalation summary screen
-            # ===========================================================================
-            elif program_mode == 'IN_ESCAL_SUMM':
-
-                # read rank of final escalation round
-                summ_slice = stng.ESCAL_RANK_SLC_13 if 'Escalation 1-13' in target_name else stng.ESCAL_RANK_SLC_50
-                escal_rank = cvt.read_escalation_rank(screen_grab, summ_slice)
-
-
-                # if last round was not passed
-                if escal_rank == '-':
-
-                    system_message = 'Escalation failed, data will not be submitted.\n'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                    program_mode = 'RAMSGATE'
-
-                # if valid rank was read
-                elif escal_rank in ['S', 'A', 'B', 'C', 'D', 'E']:
-
-                    system_message = f'Escalation successful with final round rank {escal_rank}, awaiting loot screen...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode = 'WAIT_ESCAL_LOOT'
-
-                # if invalid rank was read
-                else:
-
-                    # increment error counter
-                    error_count += 1
-                    
-                    # inform the user of retrying and loop back if error threshold not reached
-                    if error_count <= 5:
-
-                        system_message = f'WARNING: Invalid Escalation rank {escal_rank} detected. Retrying...'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                        program_mode = 'IN_ESCAL_SUMM'
-                        time.sleep(error_count)
-
-                    elif error_count > 5:
-
-                        system_message = 'WARNING: Retry limit reached. Data will not be submitted.\n'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
-                        program_mode = 'RAMSGATE'
-
-
-            # await loot screen if passed escalation summary screen
-            # ===========================================================================
-            elif program_mode == 'WAIT_ESCAL_LOOT':
-
-                # read loot screen if available
-                if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
-
-                    system_message = f'Escalation loot screen detected, processing...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    program_mode = 'IN_ESCAL_LOOT'
-
-
-            # read escalation loot data if in loot screen
-            # ===========================================================================
-            elif program_mode == 'IN_ESCAL_LOOT':
-
-                # the only way to detect error (someone skipping loot accidentally) is to check for this piece
-                if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.7):
-
-                    system_message = f'Valid screenshot captured, you may leave the current screen.'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-
-                    # read the loot screen
-                    loot_data = loot_drops_reader(screen_grab, target_name, target_name, target_name[-2:], target_name)
-
-                    for data in loot_data:
-                        forms.loot_drop_submit(data)
-
-                    system_message = system_message = f'Loot data submitted.\n'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode = 'RAMSGATE'
-
-                # error if we can't establish loot screen anymore
-                else:
-
-                    # increment error counter
-                    error_count += 1
-                    
-                    # inform the user of retrying and loop back if error threshold not reached
-                    if error_count <= 5:
-
-                        system_message = f"WARNING: Can't access loot data. Retrying..."
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                        program_mode = 'IN_ESCAL_LOOT'
-                        time.sleep(error_count)
-
-                    elif error_count > 5:
-
-                        system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+                        hunt_data = {}
                         program_mode = 'RAMSGATE'
                         
 

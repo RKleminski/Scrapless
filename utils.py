@@ -64,10 +64,10 @@ def trim_behemoth_name(name):
 When provided with threat level and a behemoth name, the function will return
 a boolean value determining if these parametres are those of a valid hunt
 '''
-def validate_hunt(threat_level, behemoth_name):
+def validate_hunt(hunt_data):
 
-    if behemoth_name in HUNT.keys():
-        if threat_level in HUNT[behemoth_name]:
+    if hunt_data['behemoth'] in HUNT.keys():
+        if hunt_data['threat'] in HUNT[hunt_data['behemoth']]:
             return True
     
     return False

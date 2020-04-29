@@ -7,8 +7,9 @@ import sys
 import os
 
 from datetime import datetime
+from uuid import uuid4
 
-scrap_ver = '0.9.7.3'
+scrap_ver = '0.9.8.0'
 
 '''
 Function for retrieving the logger, configured to separately handle
@@ -52,8 +53,7 @@ def user_init():
 
     LOG.info('SETUP: No username found, generating a random user ID.')
 
-    chars = string.ascii_uppercase + string.digits
-    anon_id = ''.join(random.choice(chars) for _ in range(20))
+    anon_id = uuid4()
 
     CONF['user']['name'] = anon_id
 
@@ -142,10 +142,10 @@ try:
     with open(HUNT_PTH, 'r') as hunt_file:
         HUNT = json.load(hunt_file)
 
-    LOG.info('SETUP: Valid hunt references loaded.')
-
     ELEMENTS = ['Blaze', 'Frost', 'Shock', 'Terra', 'Neutral', 'Umbral', 'Radiant']
     ESCAL_TIERS = [f'{elem} {tier}' for elem in ELEMENTS for tier in ['Escalation 1-13', 'Escalation 10-50']]
+
+    LOG.info('SETUP: Valid hunt references loaded.')
 
 except Exception:
     LOG.exception('An error occured while reading the hunts.json file: ')
@@ -153,15 +153,54 @@ except Exception:
 
 
 # ====================
+# READING VALID UNIVERSAL DROPS
+# ====================
+#
+try:
+    UDROPS_PTH = './data/json/universal_drops.json'
+
+    # read file of allowed hunts
+    with open(UDROPS_PTH, 'r') as udrop_file:
+        ORB_LIST = json.load(udrop_file)['Orbs']
+    with open(UDROPS_PTH, 'r') as udrop_file:
+        CELL_LIST = json.load(udrop_file)['Cells']
+
+    LOG.info('SETUP: Valid universal drops references loaded.')
+
+except Exception:
+    LOG.exception('An error occured while reading the universal_drops.json file: ')
+    sys.exit(1)
+
+
+# ====================
+# READING CONFUSION DICT
+# ====================
+#
+try:
+    CONFUSION_PTH = './data/json/confusion.json'
+
+    # read file of allowed hunts
+    with open(CONFUSION_PTH, 'r') as confusion_file:
+        CONFUSION_DICT = json.load(confusion_file)
+
+    LOG.info('SETUP: OCR character confusion dictionary loaded.')
+
+except Exception:
+    LOG.exception('An error occured while reading the confusion.json file: ')
+    sys.exit(1)
+
+
+
+# ====================
 # READING HUNT DROPS
 # ====================
 #
 try:
-    DROP_PTH = './data/json/drop_list.json'
+    DROP_PTH = './data/json/behemoth_drops.json'
 
     # read file of allowed hunts
-    with open(DROP_PTH, 'r') as hunt_file:
-        DROP = json.load(hunt_file)
+    with open(DROP_PTH, 'r') as drop_file:
+        DROP_LIST = json.load(drop_file)
 
     LOG.info('SETUP: Valid hun drop lists loaded.')
 
@@ -283,7 +322,7 @@ try:
              int(ASP_CONF['lobby']['slice']['width_end'] * X_SCALE)]
 
 
-    LOBBY_IMG = cv2.imread(f'./data/targets/lobby_screen/{A_RATIO_PATH}_lobby.png', 0)
+    LOBBY_IMG = cv2.imread(f'./data/targets/lobby_screen/{A_RATIO_PATH}.png', 0)
     new_size = ( int(LOBBY_IMG.shape[1] * X_SCALE),  int(LOBBY_IMG.shape[0] * Y_SCALE))
     LOBBY_IMG = cv2.resize(LOBBY_IMG, new_size)
 
@@ -294,7 +333,7 @@ try:
              int(ASP_CONF['lobby']['hunt_type_slice']['width_end'] * X_SCALE)]
 
 
-    HTYPE_IMG = cv2.imread(f'./data/targets/patrol_screen/{A_RATIO_PATH}_patrol.png', 0)
+    HTYPE_IMG = cv2.imread(f'./data/targets/patrol_screen/{A_RATIO_PATH}.png', 0)
     new_size = ( int(HTYPE_IMG.shape[1] * X_SCALE),  int(HTYPE_IMG.shape[0] * Y_SCALE))
     HTYPE_IMG = cv2.resize(HTYPE_IMG, new_size)
 
@@ -330,7 +369,7 @@ try:
             int(ASP_CONF['loot']['slice']['width_end'] * X_SCALE)]
 
 
-    LOOT_IMG =  cv2.imread(f'./data/targets/loot_screen/{A_RATIO_PATH}_loot.png', 0)
+    LOOT_IMG =  cv2.imread(f'./data/targets/loot_screen/{A_RATIO_PATH}.png', 0)
     new_size = ( int(LOOT_IMG.shape[1] * X_SCALE),  int(LOOT_IMG.shape[0] * Y_SCALE))
     LOOT_IMG = cv2.resize(LOOT_IMG, new_size)
 
@@ -338,11 +377,24 @@ try:
     new_size = ( int(BREAK_IMG.shape[1] * X_SCALE),  int(BREAK_IMG.shape[0] * Y_SCALE))
     BREAK_IMG = cv2.resize(BREAK_IMG, new_size)
 
+    ELITE_IMG = cv2.imread(f'./data/targets/elite_pass/{A_RATIO_PATH}.png', 0)
+    new_size = ( int(ELITE_IMG.shape[1] * X_SCALE),  int(ELITE_IMG.shape[0] * Y_SCALE))
+    ELITE_IMG = cv2.resize(ELITE_IMG, new_size)
+
     LOOT_TIME_SLC = [int(ASP_CONF['loot']['time_slice']['height_start'] * Y_SCALE),
             int(ASP_CONF['loot']['time_slice']['height_end'] * Y_SCALE),
             int(ASP_CONF['loot']['time_slice']['width_start'] * X_SCALE),
             int(ASP_CONF['loot']['time_slice']['width_end'] * X_SCALE)]
 
+    LOOT_DEATH_SLC = [int(ASP_CONF['loot']['death_slice']['height_start'] * Y_SCALE),
+            int(ASP_CONF['loot']['death_slice']['height_end'] * Y_SCALE),
+            int(ASP_CONF['loot']['death_slice']['width_start'] * X_SCALE),
+            int(ASP_CONF['loot']['death_slice']['width_end'] * X_SCALE)]
+
+    LOOT_ELITE_SLC = [int(ASP_CONF['loot']['elite_slice']['height_start'] * Y_SCALE),
+            int(ASP_CONF['loot']['elite_slice']['height_end'] * Y_SCALE),
+            int(ASP_CONF['loot']['elite_slice']['width_start'] * X_SCALE),
+            int(ASP_CONF['loot']['elite_slice']['width_end'] * X_SCALE)]
 
     LOOT_BASE_SLC = [int(ASP_CONF['loot']['base_drop_slice']['height_start'] * Y_SCALE),
                 int(ASP_CONF['loot']['base_drop_slice']['height_end'] * Y_SCALE),
@@ -358,6 +410,75 @@ try:
 
 except Exception:
     LOG.exception('An error has occured while reading the LOOT section of the config: ')
+    sys.exit(1)
+
+
+# ====================
+# BOUNTY CONFIG READ
+# ====================
+#
+try:
+
+    BOUNTY_DRAFT_SLC = [int(ASP_CONF['bounty']['draft_slice']['height_start'] * Y_SCALE),
+                        int(ASP_CONF['bounty']['draft_slice']['height_end'] * Y_SCALE),
+                        int(ASP_CONF['bounty']['draft_slice']['width_start'] * X_SCALE),
+                        int(ASP_CONF['bounty']['draft_slice']['width_end'] * X_SCALE)]
+
+
+    BOUNTY_VAL_SLC = [int(ASP_CONF['bounty']['value_slice']['height_start'] * Y_SCALE),
+                    int(ASP_CONF['bounty']['value_slice']['height_end'] * Y_SCALE),
+                    int(ASP_CONF['bounty']['value_slice']['width_start'] * X_SCALE),
+                    int(ASP_CONF['bounty']['value_slice']['width_end'] * X_SCALE)]
+
+
+    BOUNTY_MENU_SLC = [int(ASP_CONF['bounty']['menu_slice']['height_start'] * Y_SCALE),
+                        int(ASP_CONF['bounty']['menu_slice']['height_end'] * Y_SCALE),
+                        int(ASP_CONF['bounty']['menu_slice']['width_start'] * X_SCALE),
+                        int(ASP_CONF['bounty']['menu_slice']['width_end'] * X_SCALE)]
+
+
+    BOUNTY_DRAFT_IMG = cv2.imread(f'./data/targets/bounty_draft/{A_RATIO_PATH}.png', 0)
+    new_size = ( int(BOUNTY_DRAFT_IMG.shape[1] * X_SCALE),  int(BOUNTY_DRAFT_IMG.shape[0] * Y_SCALE))
+    BOUNTY_DRAFT_IMG = cv2.resize(BOUNTY_DRAFT_IMG, new_size)
+
+
+    BOUNTY_MENU_IMG = cv2.imread(f'./data/targets/bounty_menu/{A_RATIO_PATH}.png', 0)
+    new_size = ( int(BOUNTY_MENU_IMG.shape[1] * X_SCALE),  int(BOUNTY_MENU_IMG.shape[0] * Y_SCALE))
+    BOUNTY_MENU_IMG = cv2.resize(BOUNTY_MENU_IMG, new_size)
+
+
+    LOG.info('Bounty draft recognition configuration loaded successfully.')
+
+except Exception: 
+    LOG.exception('An error has occured while reading the BOUNTY section of the config.')
+    sys.exit(1)
+
+
+# ====================
+# TRIAL CONFIG READ
+# ====================
+#
+try:
+
+    TRIAL_RES_SLC = [int(ASP_CONF['trial']['result_slice']['height_start'] * Y_SCALE),
+                    int(ASP_CONF['trial']['result_slice']['height_end'] * Y_SCALE),
+                    int(ASP_CONF['trial']['result_slice']['width_start'] * X_SCALE),
+                    int(ASP_CONF['trial']['result_slice']['width_end'] * X_SCALE)]
+
+
+    BHMT_TRIAL_SLC = [int(ASP_CONF['trial']['behemoth_slice']['height_start'] * Y_SCALE),
+                    int(ASP_CONF['trial']['behemoth_slice']['height_end'] * Y_SCALE),
+                    int(ASP_CONF['trial']['behemoth_slice']['width_start'] * X_SCALE),
+                    int(ASP_CONF['trial']['behemoth_slice']['width_end'] * X_SCALE)]
+                    
+
+    TRIAL_RES_IMG = cv2.imread(f'./data/targets/trial_result/{A_RATIO_PATH}.png', 0)
+    new_size = ( int(TRIAL_RES_IMG.shape[1] * X_SCALE),  int(TRIAL_RES_IMG.shape[0] * Y_SCALE))
+    TRIAL_RES_IMG = cv2.resize(TRIAL_RES_IMG, new_size)
+
+
+except Exception:
+    LOG.exception('An error has occured while reading the TRIAL section of the config')
     sys.exit(1)
 
 
@@ -391,84 +512,10 @@ try:
                     int(ASP_CONF['escalation']['summary_slice']['width_end'] * X_SCALE)]
 
 
-    ESCAL_SUMM_IMG = cv2.imread(f'./data/targets/esc_summary/{A_RATIO_PATH}_esc_summary.png', 0)
-    new_size = ( int(ESCAL_SUMM_IMG.shape[1] * X_SCALE),  int(ESCAL_SUMM_IMG.shape[0] * Y_SCALE))
-    ESCAL_SUMM_IMG = cv2.resize(ESCAL_SUMM_IMG, new_size)
-
-
     LOG.info('Escalation recognition configuation loaded successfully.')
 
 except Exception:
     LOG.exception('An error has occured while reading the ESCALATION section of the config: ')
-    sys.exit(1)
-
-
-# ====================
-# BOUNTY CONFIG READ
-# ====================
-#
-try:
-
-    BOUNTY_DRAFT_SLC = [int(ASP_CONF['bounty']['draft_slice']['height_start'] * Y_SCALE),
-                        int(ASP_CONF['bounty']['draft_slice']['height_end'] * Y_SCALE),
-                        int(ASP_CONF['bounty']['draft_slice']['width_start'] * X_SCALE),
-                        int(ASP_CONF['bounty']['draft_slice']['width_end'] * X_SCALE)]
-
-
-    BOUNTY_VAL_SLC = [int(ASP_CONF['bounty']['value_slice']['height_start'] * Y_SCALE),
-                    int(ASP_CONF['bounty']['value_slice']['height_end'] * Y_SCALE),
-                    int(ASP_CONF['bounty']['value_slice']['width_start'] * X_SCALE),
-                    int(ASP_CONF['bounty']['value_slice']['width_end'] * X_SCALE)]
-
-
-    BOUNTY_MENU_SLC = [int(ASP_CONF['bounty']['menu_slice']['height_start'] * Y_SCALE),
-                        int(ASP_CONF['bounty']['menu_slice']['height_end'] * Y_SCALE),
-                        int(ASP_CONF['bounty']['menu_slice']['width_start'] * X_SCALE),
-                        int(ASP_CONF['bounty']['menu_slice']['width_end'] * X_SCALE)]
-
-
-    BOUNTY_DRAFT_IMG = cv2.imread(f'./data/targets/bounty_draft/{A_RATIO_PATH}_bounty_draft.png', 0)
-    new_size = ( int(BOUNTY_DRAFT_IMG.shape[1] * X_SCALE),  int(BOUNTY_DRAFT_IMG.shape[0] * Y_SCALE))
-    BOUNTY_DRAFT_IMG = cv2.resize(BOUNTY_DRAFT_IMG, new_size)
-
-
-    BOUNTY_MENU_IMG = cv2.imread(f'./data/targets/bounty_menu/{A_RATIO_PATH}_bounty_menu.png', 0)
-    new_size = ( int(BOUNTY_MENU_IMG.shape[1] * X_SCALE),  int(BOUNTY_MENU_IMG.shape[0] * Y_SCALE))
-    BOUNTY_MENU_IMG = cv2.resize(BOUNTY_MENU_IMG, new_size)
-
-
-    LOG.info('Bounty draft recognition configuration loaded successfully.')
-
-except Exception: 
-    LOG.exception('An error has occured while reading the BOUNTY section of the config.')
-    sys.exit(1)
-
-
-# ====================
-# TRIAL CONFIG READ
-# ====================
-#
-try:
-
-    TRIAL_RES_SLC = [int(ASP_CONF['trial']['result_slice']['height_start'] * Y_SCALE),
-                    int(ASP_CONF['trial']['result_slice']['height_end'] * Y_SCALE),
-                    int(ASP_CONF['trial']['result_slice']['width_start'] * X_SCALE),
-                    int(ASP_CONF['trial']['result_slice']['width_end'] * X_SCALE)]
-
-
-    BHMT_TRIAL_SLC = [int(ASP_CONF['trial']['behemoth_slice']['height_start'] * Y_SCALE),
-                    int(ASP_CONF['trial']['behemoth_slice']['height_end'] * Y_SCALE),
-                    int(ASP_CONF['trial']['behemoth_slice']['width_start'] * X_SCALE),
-                    int(ASP_CONF['trial']['behemoth_slice']['width_end'] * X_SCALE)]
-                    
-
-    TRIAL_RES_IMG = cv2.imread(f'./data/targets/trial_result/{A_RATIO_PATH}_trial_result.png', 0)
-    new_size = ( int(TRIAL_RES_IMG.shape[1] * X_SCALE),  int(TRIAL_RES_IMG.shape[0] * Y_SCALE))
-    TRIAL_RES_IMG = cv2.resize(TRIAL_RES_IMG, new_size)
-
-
-except Exception:
-    LOG.exception('An error has occured while reading the TRIAL section of the config')
     sys.exit(1)
 
 

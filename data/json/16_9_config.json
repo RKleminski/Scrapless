@@ -3,7 +3,7 @@
         "behemoth_slice":{
             "height_start":50,
             "height_end":110,
-            "width_start":1375,
+            "width_start":1382,
             "width_end":1900
         },
         "slice":{
@@ -43,7 +43,19 @@
             "height_end":80,
             "width_start":220,
             "width_end":305
-        },    
+        },
+        "death_slice":{
+            "height_start":225,
+            "height_end":275,
+            "width_start":565,
+            "width_end":910
+        },
+        "elite_slice": {
+            "height_start":225,
+            "height_end":925,
+            "width_start":515,
+            "width_end":570
+        },
         "base_drop_slice":{
             "height_start":272,
             "height_end":924,
@@ -55,32 +67,6 @@
             "height_end":924,
             "width_start":580,
             "width_end":912
-        }
-    },
-    "escalation":{
-        "lobby_slice":{
-            "height_start":50,
-            "height_end":110,
-            "width_start":1375,
-            "width_end":1800
-        },
-        "summary_slice":{
-            "height_start":345,
-            "height_end":400,
-            "width_start":770,
-            "width_end":1150
-        },
-        "rank_slice_13":{
-            "height_start":590,
-            "height_end":670,
-            "width_start":1425,
-            "width_end":1500
-        },
-        "rank_slice_50":{
-            "height_start":600,
-            "height_end":660,
-            "width_start":1460,
-            "width_end":1515
         }
     },
     "bounty":{
@@ -115,6 +101,32 @@
             "height_end":60,
             "width_start":95,
             "width_end":475
+        }
+    },
+    "escalation":{
+        "lobby_slice":{
+            "height_start":50,
+            "height_end":110,
+            "width_start":1375,
+            "width_end":1800
+        },
+        "summary_slice":{
+            "height_start":345,
+            "height_end":400,
+            "width_start":770,
+            "width_end":1150
+        },
+        "rank_slice_13":{
+            "height_start":590,
+            "height_end":670,
+            "width_start":1425,
+            "width_end":1500
+        },
+        "rank_slice_50":{
+            "height_start":600,
+            "height_end":660,
+            "width_start":1460,
+            "width_end":1515
         }
     }
 }
