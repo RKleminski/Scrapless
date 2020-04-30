@@ -202,10 +202,12 @@ def loot_drops_reader(screen_grab, hunt_data):
                             for iter in range(0, int(count/3)):
                                 loot_drops.append((drop, 3))
 
-                    # handle cell drops
+                    # drop an error if we don't deal with 
+                    # orbs and we had weirdly many drops
                     elif count >= 10:
                         return 'TOO_MANY_DROPS'
 
+                    # handle cell drops
                     elif 'Cell' in drop:
 
                         cell_pow = drop.split(' ')[0]
@@ -214,6 +216,7 @@ def loot_drops_reader(screen_grab, hunt_data):
                         for character in stng.CONFUSION_DICT.keys():
                             cell_pow = cell_pow.replace(character, stng.CONFUSION_DICT[character])
 
+                        # put the name back together
                         drop = ' '.join([cell_pow, *drop.split(' ')[1:]])
 
                         # add to slay drops
