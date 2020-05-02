@@ -1,10 +1,10 @@
 {
     "lobby":{
         "behemoth_slice":{
-            "height_start":50,
-            "height_end":110,
+            "height_start":35,
+            "height_end":119,
             "width_start":1382,
-            "width_end":1900
+            "width_end":1890
         },
         "slice":{
             "height_start":870,

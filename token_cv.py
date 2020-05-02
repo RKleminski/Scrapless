@@ -191,8 +191,8 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None, trim_size
     image_slice = cv2.cvtColor(image_slice, cv2.COLOR_RGB2GRAY)
 
     # determine resize dimensions
-    width = int(image_slice.shape[1] * 20)
-    height = int(image_slice.shape[0] * 20)
+    width = int(image_slice.shape[1] * 14)
+    height = int(image_slice.shape[0] * 15)
     dim = (width, height)
 
     # resize
@@ -209,8 +209,6 @@ def read_behemoth(screen_grab, slice, inverse=False, tess_config=None, trim_size
     while (trim_image.shape[0] == 0 or trim_image.shape[1] == 0):
         trim_size -= 5
         trim_image = trim_white(ocr_image, trim_size)
-
-    cv2.imwrite('./devdata/test_behe.png', trim_image)
 
     # read the behemoth name
     return pytesseract.image_to_string(trim_image, config=tess_config)

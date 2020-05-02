@@ -41,7 +41,7 @@ def lobby_detect(screen_grab):
                 return 'ESCAL', escalation_level[0]
 
         # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=50, thresh=140)
+        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=50, thresh=145)
 
         # process behemoth name if it is an actual hunt lobby
         behemoth_name = utils.trim_behemoth_name(behemoth_name)
@@ -443,7 +443,7 @@ def main():
                 # if Escalation detected, wait for results screen
                 elif program_mode == 'ESCAL':
                     
-                    system_message = f'{hunt_data["behemoth"]} lobby detected, awaiting result screen...'
+                    system_message = f'{hunt_data["behemoth"]} detected, but won\'t be read for results.'
                     # overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
                     # program_mode = 'IN_ESCAL'
                 
@@ -594,7 +594,7 @@ def main():
                     path = './error_imgs/'
                     if not os.path.exists(path):
                         os.makedirs(path)
-                    cv2.imwrite(f'path/{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
+                    cv2.imwrite(f'{path}{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
 
                     program_mode = 'RAMSGATE'
 
@@ -628,6 +628,12 @@ def main():
 
                         system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+
+                        path = './error_imgs/'
+                        if not os.path.exists(path):
+                            os.makedirs(path)
+                        cv2.imwrite(f'{path}{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
+
                         hunt_data = {}
                         program_mode = 'RAMSGATE'
                         

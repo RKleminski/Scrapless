@@ -50,6 +50,7 @@ to reduce it to the basic "species".
 '''
 def trim_behemoth_name(name):
 
+    name = name.replace('\n', ' ')
     name = name.replace(' (Heroic)', '')
     name = name.replace(' Patrol', '')
     name_vec = name.split(' ')

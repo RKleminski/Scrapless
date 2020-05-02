@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 from uuid import uuid4
 
-scrap_ver = '0.9.8.0'
+scrap_ver = '0.9.8.1'
 
 '''
 Function for retrieving the logger, configured to separately handle
