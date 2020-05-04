@@ -444,8 +444,9 @@ def main():
                 elif program_mode == 'ESCAL':
                     
                     system_message = f'{hunt_data["behemoth"]} detected, but won\'t be read for results.'
-                    # overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
-                    # program_mode = 'IN_ESCAL'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
+                    program_mode = 'RAMSGATE'
+                    time.sleep(120)
                 
 
                 # if Hunt detected, proceed to read lobby further
@@ -640,7 +641,7 @@ def main():
 
         # log any exceptions encountered by the program
         except Exception:
-            stng.LOG.exception('An exception has occured: ')
+            stng.LOG.error('An exception has occured: ')
 
 '''
 Standard stuff, run main function if running the file

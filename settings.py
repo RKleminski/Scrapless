@@ -8,8 +8,9 @@ import os
 
 from datetime import datetime
 from uuid import uuid4
+from glob import glob
 
-scrap_ver = '0.9.8.1'
+scrap_ver = '0.9.8.5'
 
 '''
 Function for retrieving the logger, configured to separately handle
@@ -36,7 +37,7 @@ def get_logger(LOG_FORMAT = '%(asctime)s %(message)s', datefmt='%d/%m/%Y %H:%M:%
     file_handler_error = logging.FileHandler(LOG_FILE_ERROR, mode='a')
     file_handler_error.setFormatter(log_formatter)
     file_handler_error.setLevel(logging.ERROR)
-    #log.addHandler(file_handler_error)
+    log.addHandler(file_handler_error)
 
     log.setLevel(logging.INFO)
 
@@ -72,17 +73,21 @@ Requires game installation path to work properly
 '''
 def get_patch_version():
 
-    # open version file from the specified path
-    with open(f'{GAME_PTH}/Version.txt', 'r') as version_file:
+    # path to manifests folder of Epic Games
+    manifest_path = "C:\\ProgramData\\Epic\\EpicGamesLauncher\\Data\\Manifests"
 
-        # read the only line in the file
-        file_line = version_file.readline()
+    # go through all manifest files
+    for file_path in glob(manifest_path + '\\*.item'):
+        item_file = open(file_path, 'r')
+        installed = json.load(item_file)
 
-        # extract patch version
-        patch = file_line.split('_')[1].split('-')[1]
+        # get patch version if Dauntless found
+        if installed['DisplayName'] == 'Dauntless':
+            
+            patch = '.'.join(installed['AppVersionString'].split('.')[:3])
+            return patch
 
-        # return the patch
-        return patch
+    raise Exception('ERROR: Dauntless manifest file could not be found!')
 
 # ====================
 # FOLDER CREATION
@@ -111,7 +116,7 @@ welcome_string = f'=== WELCOME TO SCRAPLESS {scrap_ver} ! ==='
 print('=' * len(welcome_string))
 print(welcome_string)
 print('=' * len(welcome_string))
-print('\n')
+print('ERROR: ')
 
 
 # ====================
@@ -127,7 +132,7 @@ try:
     LOG.info('SETUP: Config file read successfully.')
 
 except Exception:
-    LOG.Exception('An exception occured while reading the config.json file: ')
+    LOG.error('ERROR: An exception occured while reading the config.json file: ')
     sys.exit(1)
 
 
@@ -148,7 +153,7 @@ try:
     LOG.info('SETUP: Valid hunt references loaded.')
 
 except Exception:
-    LOG.exception('An error occured while reading the hunts.json file: ')
+    LOG.error('An error occured while reading the hunts.json file: ')
     sys.exit(1)
 
 
@@ -168,7 +173,7 @@ try:
     LOG.info('SETUP: Valid universal drops references loaded.')
 
 except Exception:
-    LOG.exception('An error occured while reading the universal_drops.json file: ')
+    LOG.error('An error occured while reading the universal_drops.json file: ')
     sys.exit(1)
 
 
@@ -186,7 +191,7 @@ try:
     LOG.info('SETUP: OCR character confusion dictionary loaded.')
 
 except Exception:
-    LOG.exception('An error occured while reading the confusion.json file: ')
+    LOG.error('ERROR: An error occured while reading the confusion.json file: ')
     sys.exit(1)
 
 
@@ -205,7 +210,7 @@ try:
     LOG.info('SETUP: Valid hun drop lists loaded.')
 
 except Exception:
-    LOG.exception('An error occured while reading the drop_list.json file: ')
+    LOG.error('ERROR: An error occured while reading the drop_list.json file: ')
     sys.exit(1)
 
 
@@ -214,14 +219,13 @@ except Exception:
 # ====================
 #
 try:
-    GAME_PTH = CONF['paths']['game']
     TESS_PTH = CONF['paths']['tesseract']
     TESS_CONF = CONF['paths']['tesseract_conf']
 
     LOG.info('SETUP: Game and Tesseract paths loaded.')
 
 except Exception:
-    LOG.exception('An error occured while reading Game and Tesseract paths: ')
+    LOG.error('ERROR: An error occured while reading Tesseract paths: ')
     sys.exit(1)
 
 
@@ -257,7 +261,7 @@ try:
     LOG.info(f'SETUP: Screen specifications found, {SCRN_WDT}x{SCRN_HGT}p resolution, {A_RATIO} aspect ratio.')
 
 except Exception:
-    LOG.exception('An error occured while establishing screen specifications: ')
+    LOG.error('ERROR: An error occured while establishing screen specifications: ')
     sys.exit(1)
 
 
@@ -270,7 +274,7 @@ try:
     LOG.info(f'SETUP: Username set to {USER}')
 
 except Exception:
-    LOG.exception('An error occured when establishing username: ')
+    LOG.error('ERROR: An error occured when establishing username: ')
     sys.exit(1)
 
 
@@ -283,7 +287,7 @@ try:
     LOG.info(f'SETUP: Game version {GAME_VER} detected.')
 
 except Exception:
-    LOG.exception('An error occured when retrieving patch version: ')
+    LOG.error('ERROR: An error occured when retrieving patch version: ')
     sys.exit(1)
 
 
@@ -300,7 +304,7 @@ try:
     LOG.info(f'SETUP: Config file for {A_RATIO} ratio accessed successfully.')
 
 except Exception:
-    LOG.exception(f'An error has occured when opening config file for {A_RATIO} raio: ')
+    LOG.error(f'ERROR: An error has occured when opening config file for {A_RATIO} raio: ')
     sys.exit(1)
 
 
@@ -344,10 +348,10 @@ try:
                 int(ASP_CONF['lobby']['threat_slice']['width_end'] * X_SCALE)]
 
 
-    LOG.info('Lobby recognition configuration loaded successfully.')
+    LOG.info('SETUP: Lobby recognition configuration loaded successfully.')
 
 except Exception:
-    LOG.exception('An error has occured while reading the LOBBY section of the config: ')
+    LOG.error('ERROR: An error has occured while reading the LOBBY section of the config: ')
     sys.exit(1)
 
 
@@ -406,10 +410,10 @@ try:
                 int(ASP_CONF['loot']['bonus_drop_slice']['width_start'] * X_SCALE),
                 int(ASP_CONF['loot']['bonus_drop_slice']['width_end'] * X_SCALE)]
 
-    LOG.info('Loot recognition configuration loaded successfully.')
+    LOG.info('SETUP: Loot recognition configuration loaded successfully.')
 
 except Exception:
-    LOG.exception('An error has occured while reading the LOOT section of the config: ')
+    LOG.error('ERROR: An error has occured while reading the LOOT section of the config: ')
     sys.exit(1)
 
 
@@ -447,10 +451,10 @@ try:
     BOUNTY_MENU_IMG = cv2.resize(BOUNTY_MENU_IMG, new_size)
 
 
-    LOG.info('Bounty draft recognition configuration loaded successfully.')
+    LOG.info('SETUP: Bounty draft recognition configuration loaded successfully.')
 
 except Exception: 
-    LOG.exception('An error has occured while reading the BOUNTY section of the config.')
+    LOG.error('ERROR: An error has occured while reading the BOUNTY section of the config.')
     sys.exit(1)
 
 
@@ -478,7 +482,7 @@ try:
 
 
 except Exception:
-    LOG.exception('An error has occured while reading the TRIAL section of the config')
+    LOG.error('ERROR: An error has occured while reading the TRIAL section of the config')
     sys.exit(1)
 
 
@@ -512,10 +516,10 @@ try:
                     int(ASP_CONF['escalation']['summary_slice']['width_end'] * X_SCALE)]
 
 
-    LOG.info('Escalation recognition configuation loaded successfully.')
+    LOG.info('SETUP: Escalation recognition configuation loaded successfully.')
 
 except Exception:
-    LOG.exception('An error has occured while reading the ESCALATION section of the config: ')
+    LOG.error('ERROR: An error has occured while reading the ESCALATION section of the config: ')
     sys.exit(1)
 
 
@@ -542,10 +546,10 @@ try:
     OVERLAY_COLOR_ERROR = CONF['overlay']['colors']['error']
     OVERLAY_COLOR_JEGG = CONF['overlay']['colors']['jegg']
 
-    LOG.info('Overlay configuration loaded successfully.')
+    LOG.info('SETUP: Overlay configuration loaded successfully.')
 
 except Exception:
-    LOG.exception('An error has occured while reading the OVERLAY section of the config: ')
+    LOG.error('ERROR: An error has occured while reading the OVERLAY section of the config: ')
     sys.exit(1)
 
 print('\n')

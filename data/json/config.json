@@ -3,7 +3,6 @@
     "name":"Roel"
   },
   "paths":{
-    "game":"E:/Epic Games/Dauntless",
     "tesseract":"C:/Program Files/Tesseract-OCR/tesseract.exe",
     "tesseract_conf":"./data/tesseract/dauntless"
   },
@@ -17,13 +16,13 @@
     "enable": "Yes",
     "opacity": 65,
     "position":{
-      "Y": 0,
-      "X": 1420
+      "Y": 995,
+      "X": 210
     },
     "output":{
-      "max_lines": 2,
+      "max_lines": 3,
       "font": "Calibri Bold",
-      "font-size": 8
+      "font-size": 9
     },
     "colors":{
       "background": "#000000",
