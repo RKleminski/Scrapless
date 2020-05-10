@@ -106,7 +106,10 @@ def loot_screen_reader(screen_grab,hunt_data, overlay_labels):
 
         loot_data = loot_drops_reader(screen_grab, hunt_data)
 
-        return 'OK', loot_data
+        if loot_data == 'TOO_MANY_DROPS':
+            return 'ERROR', 'TOO_MANY_DROPS'
+        else:
+            return 'OK', loot_data
     else:
         return 'ERROR', {'lobby_behemoth': hunt_data['behemoth'], 'loot_behemoth': loot_behemoth_name}
 
@@ -586,18 +589,6 @@ def main():
                     hunt_data = {}
                     program_mode = 'RAMSGATE'
 
-                # otherwise, if suspicious loot numbers, save screenshot for future reference
-                elif loot_data == 'TOO_MANY_DROPS':
-
-                    system_message = f'ERROR: Suspiciously big stack of loot. Screenshot saved, data won\'t be submitted.'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
-
-                    path = './error_imgs/'
-                    if not os.path.exists(path):
-                        os.makedirs(path)
-                    cv2.imwrite(f'{path}{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
-
-                    program_mode = 'RAMSGATE'
 
                 # otherwise, if everything is fine, submit data
                 elif loot_status == 'OK':
@@ -614,29 +605,58 @@ def main():
                 # otherwise, if error occured, retry
                 elif loot_status == 'ERROR':
 
-                    # increment error counter
-                    error_count += 1
-                    
-                    # inform the user of retrying and loop back if error threshold not reached
-                    if error_count <= 5:
-
-                        system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                        program_mode = 'IN_LOOT'
-                        time.sleep(error_count)
-
-                    elif error_count > 5:
-
-                        system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
+                    # if suspicious loot numbers are present, save screenshot for future reference
+                    if loot_data ==  'TOO_MANY_DROPS':
+                        system_message = f'ERROR: Suspiciously big stack of loot. Screenshot saved, data won\'t be submitted.'
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
 
+                        # prepare a path for saving the error-causing
                         path = './error_imgs/'
                         if not os.path.exists(path):
                             os.makedirs(path)
-                        cv2.imwrite(f'{path}{uuid4()}.png', cv2.cvtColor(screen_grab, cv2.COLOR_RGB2BGR))
+                        
+                        # transform error image grab for saving
+                        err_grab = np.array(screen_grab)
+                        err_grab = cv2.cvtColor(err_grab, cv2.COLOR_RGB2BGR)
 
-                        hunt_data = {}
+                        # save error grab to disk
+                        cv2.imwrite(f'{path}{uuid4()}.png', err_grab)
+
                         program_mode = 'RAMSGATE'
+
+                    # otherwise handle the error normally
+                    else:
+                        # increment error counter
+                        error_count += 1
+                        
+                        # inform the user of retrying and loop back if error threshold not reached
+                        if error_count <= 5:
+
+                            system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
+                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+
+                            # prepare a path for saving the error-causing
+                            path = './error_imgs/'
+                            if not os.path.exists(path):
+                                os.makedirs(path)
+                            
+                            # transform error image grab for saving
+                            err_grab = np.array(screen_grab)
+                            err_grab = cv2.cvtColor(err_grab, cv2.COLOR_RGB2BGR)
+
+                            # save error grab to disk
+                            cv2.imwrite(f'{path}{uuid4()}.png', err_grab)
+                            
+                            program_mode = 'IN_LOOT'
+                            time.sleep(error_count)
+
+                        elif error_count > 5:
+
+                            system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
+                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+
+                            hunt_data = {}
+                            program_mode = 'RAMSGATE'
                         
 
         # log any exceptions encountered by the program

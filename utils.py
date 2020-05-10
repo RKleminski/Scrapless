@@ -50,13 +50,29 @@ to reduce it to the basic "species".
 '''
 def trim_behemoth_name(name):
 
+    # remove newlines present because of two-line formatting of heroic namnes
     name = name.replace('\n', ' ')
+
+    # remove heroic classification as it is useless
     name = name.replace(' (Heroic)', '')
+
+    # remove Patrol because we handle the name based on behemoth or element name alone
     name = name.replace(' Patrol', '')
+
+    # split the name into a vector
     name_vec = name.split(' ')
 
+    # if party is not defeated, return where the name should be
     if name_vec[0] != 'Defeated':
-        return name_vec[-1]
+        
+        # counteract possible trash strings
+        # at the end of the read string
+        if len(name_vec) >= 2:
+            return name_vec[1]
+        else:
+            return name_vec[0]
+
+    # if party is defeated, pass tha  on
     else:
         return name_vec[0]
 

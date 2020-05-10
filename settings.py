@@ -10,7 +10,7 @@ from datetime import datetime
 from uuid import uuid4
 from glob import glob
 
-scrap_ver = '0.9.8.5'
+scrap_ver = '0.9.8.6'
 
 '''
 Function for retrieving the logger, configured to separately handle
@@ -116,7 +116,6 @@ welcome_string = f'=== WELCOME TO SCRAPLESS {scrap_ver} ! ==='
 print('=' * len(welcome_string))
 print(welcome_string)
 print('=' * len(welcome_string))
-print('ERROR: ')
 
 
 # ====================
