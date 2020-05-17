@@ -13,13 +13,15 @@ import win32con
 
 from fuzzywuzzy import fuzz, process
 
-import token_cv as cvt
-import utils
-import forms
+# import token_cv as cvt
+# import utils
+# import forms
 
 import numpy as np
 import cv2
 import re
+
+from app import App
 
 '''
 Detects the lobby and determines the type of a lobby the player is currently in
@@ -302,100 +304,14 @@ def fuzzy_drop(drop, drop_list):
         match = process.extractOne(drop, drop_list, scorer=fuzz.ratio, score_cutoff=80)
         return '' if match is None else match[0]
 
-'''
-Sets up the initial window for Tkinter labels which form the overlay
-Ensuring parametres like minimum size, staying on top and transparency
-Returns the overlay instance and list of labels to keep track of
-'''
-def overlay_setup(overlay_labels):
-
-    # draw new overlay
-    line = f'SCRAPLESS {stng.scrap_ver}'
-    color = stng.OVERLAY_COLOR_INFO
-    bg_color= stng.OVERLAY_COLOR_BG
-
-    overlay = tkinter.Label(text=line, font=(stng.OVERLAY_FONT, stng.OVERLAY_FONT_SIZE), fg=color, bg=bg_color)
-    overlay_labels.append(overlay)
-    overlay.pack()
-
-    # configure the overlay according to our needs
-    overlay.master.overrideredirect(True)
-    overlay.master.geometry(f"+{stng.OVERLAY_X}+{stng.OVERLAY_Y}")
-    overlay.master.minsize(500, 20)
-    overlay.master.configure(bg=bg_color)
-    overlay.master.lift()
-    overlay.master.wm_attributes("-topmost", True)
-    overlay.master.wm_attributes("-alpha", stng.OVERLAY_OPACITY)
-
-    # set the window to be functionally transparent aka have mouse clicks pass through
-    window = win32gui.FindWindow(None, "tk")
-    lExStyle = win32gui.GetWindowLong(window, win32con.GWL_EXSTYLE)
-    lExStyle |=  win32con.WS_EX_TRANSPARENT | win32con.WS_EX_LAYERED
-    win32gui.SetWindowLong(window, win32con.GWL_EXSTYLE , lExStyle )
-
-    # update overlay and ensure it stays on top
-    overlay.master.update()
-    overlay.master.lift()
-
-    return overlay, overlay_labels
-
-
-'''
-Update the overlay by creating a new line of label, with desired text and colour
-The oldest stored label will be destroyed if line limit is reached
-Returns overlay and list of labels to keep track of
-'''
-def overlay_update(new_line, line_color, overlay_labels):
-
-    while len(overlay_labels) >= stng.OVERLAY_MAX_LINES:
-        overlay_labels[0].destroy()
-        overlay_labels.pop(0)
-
-    label = tkinter.Label(text=new_line, font=(stng.OVERLAY_FONT, stng.OVERLAY_FONT_SIZE), fg=line_color, bg=stng.OVERLAY_COLOR_BG)
-    overlay_labels.append(label)
-    label.pack()
-
-    # update overlay and ensure it stays on top
-    label.master.update()
-    label.master.lift()
-
-    return overlay_labels
-
-
-'''
-A convenience function which automatically handles system output to console, log file
-and the overlay, with specified message and color on the overlay
-Returns overlay and list of labels to keep track of
-'''
-def system_output(message, color, overlay_labels):
-
-    if stng.OVERLAY_ON:
-
-        overlay_labels = overlay_update(message.replace('\n', ''), color, overlay_labels)
-
-    stng.LOG.info(message)
-
-    return overlay_labels
-
 
 '''
 Bread and butter of the program, running in a loop to continously
 read the screen of the user, in order to recover data and process
 data collecting efforts
 '''
-def main():
+def blblblblb():
     
-    # store overlay variables
-    overlay = ''
-    overlay_labels = []
-
-    # configure overlay if enabled
-    if stng.OVERLAY_ON:
-        overlay, overlay_labels = overlay_setup(overlay_labels)
-
-    # configure tesseract path
-    pytesseract.pytesseract.tesseract_cmd = stng.TESS_PTH
-
     # variable to control the current operations of the program
     program_mode = 'RAMSGATE'
 
@@ -406,17 +322,6 @@ def main():
     while True:
 
         try:
-
-            # pause between captures
-            time.sleep(1)
-
-            # update overlay and ensure it stays on top
-            if stng.OVERLAY_ON:
-                overlay.master.update()
-                overlay.master.lift()
-
-            # capture the current state of the screen
-            screen_grab = pyautogui.screenshot(region=stng.SCRN_REG)
 
             # read for lobby screen if last seen in ramsgate
             # ===========================================================================
@@ -662,6 +567,26 @@ def main():
         # log any exceptions encountered by the program
         except Exception:
             stng.LOG.error('An exception has occured: ')
+
+
+def main():
+
+    # new instance of the main class
+    scrapless = App()
+
+    # operate in an infinite loop
+    while True:
+
+        # capture the screen
+        scrapless.screenCap()
+
+        # refresh the overlay to keep it responsive, if present
+        if scrapless.overlay:
+            scrapless.overlay.refresh()
+
+        # throttle the loop for performance
+        time.sleep(0.5)
+
 
 '''
 Standard stuff, run main function if running the file
