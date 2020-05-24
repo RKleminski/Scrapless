@@ -1,73 +1,69 @@
-import os
-import json
+from configurable import Configurable
 
 '''
 A class for defining image slices, which store coordinates 
 of opposite corners of a rectangle
-These slices can also be used to easily return an appropriate 
-slice of the image in a numpy array form
+Inherits after Configurable for ease of initialisation
 '''
-class Slice:
-
-    # class variables
-    #
-    # possible coordinate names
-    CORD_LIST = ['height_start', 'height_end', 'width_start', 'width_end']
+class Slice(Configurable):
 
     '''
     Constructor initalizes the slice with given coordinates
     of the corners that define the span of a rectangular slice
     '''
-    def __init__(self, x0 = 0, y0 = 0, x1 = 0 , y1 = 0, json_path = ''):
-        
-        # if path provided, load coordinates from file
-        if json_path != '':
-            self._setFromJSON(json_path)
-        
-        # otherwise, accept them from passed variables
-        else:
-            self.x0 = x0
-            self.y0 = y0
+    def __init__(self, conf_path):
 
-            self.x1 = x1
-            self.y1 = y1
+        # invoke the parent constructor
+        Configurable.__init__(self, conf_path)
+
+        # set variable values
+        self.x0 = self.readCoord('width_start')
+        self.y0 = self.readCoord('height_start')
+
+        self.x1 = self.readCoord('width_end')
+        self.y1 = self.readCoord('height_end')
 
     '''
-    Function for filling the coordinates from a JSON specification
-    file, as provided with the app and used for standardised configuration
+    A wrapper around the readKey function which additionally checks
+    if the read value is a proper coordinate
     '''
-    def _setFromJSON(self, path):
+    def readCoord(self, key):
 
-        # check if path is not empty
-        if path != '':
+        # retrieve coordinate
+        coord = self.readKey(key)
 
-            # check if the specified file exists
-            if os.path.isfile(path):
+        # check if the coordinate is an integer
+        if type(coord) == int:
 
-                # read the file
-                with open(path, 'r') as load_file:
+            # check if it has a positive value
+            if coord >= 0:
 
-                    # parse JSON to dictionary
-                    slice_file = json.load(load_file)
-
-                    # verify all coordinates are in the file
-                    for coord in self.CORD_LIST:
-
-                        # raise exception if coordinate not found
-                        if coord not in slice_file.keys():
-                            raise KeyError(f'key {coord} could not be found in file {path}')
-
-                        # otherwise fill coordinates appropriately
-                        self.x0 = slice_file['width_start']
-                        self.y0 = slice_file['height_start']
-                        self.x1 = slice_file['width_end']
-                        self.y1 = slice_file['height_end']
-
-                    # return self
-                    return self
+                # return coordinate
+                return coord
 
             # otherwise raise an exception
-            raise FileNotFoundError(f'file {path} could not be found')
+            raise ValueError(f'screen corrdinates cannot be negative; in {self.conf_path}')
 
         # otherwise raise an exception
-        raise ValueError(f'path to a JSON file can\'t be empty')
+        raise TypeError(f'screen coordinate has to be an integer; in {self.conf_path}')
+
+    '''
+    A function which, once an image is provided, isolates the slice out of it
+    then returns that section of the image
+    In: image in an array form
+    Out: a section of input image
+    '''
+    def sliceImage(self, image):
+
+        # check if the image has of legal size
+        for size in image.shape:
+
+            # if any shape is zero, raise an exception
+            if size < 1:
+                raise ValueError(f'one of image dimensions is lower than 1')
+
+        # slice out the region of the image
+        image_slice = image[self.y0:self.y1, self.x0:self.x1, :]
+
+        # return the slice
+        return image_slice

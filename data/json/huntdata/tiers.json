@@ -1,0 +1,26 @@
+{
+    "Neutral/Elemental": {
+        "upper": 7,
+        "lower": 1
+    },
+    "Dire": {
+        "upper": 12,
+        "lower": 8
+    },
+    "Heroic": {
+        "upper": 16,
+        "lower": 13
+    },
+    "Heroic+": {
+        "upper": 17,
+        "lower": 17
+    },
+    "Normal Trial": {
+        "upper": 18,
+        "lower": 18
+    },
+    "Dauntless Trial": {
+        "upper": 22,
+        "lower": 22
+    }
+}

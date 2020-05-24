@@ -8,8 +8,8 @@ __pycache__/
 
 # Custom ignore for this project
 error_logs/
-devdata/
-logs/
+debug_data/
+logging/
 
 # Distribution / packaging
 .Python

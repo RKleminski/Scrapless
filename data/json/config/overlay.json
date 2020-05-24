@@ -1,0 +1,21 @@
+{
+    "enable": "yes",
+    "opacity": 75,
+    "max_lines": 4,
+    "position":{
+        "Y": 996,
+        "X": 210
+    },
+    "font":{
+        "font-name": "Calibri Bold",
+        "font-size": 10
+    },
+    "colors":{
+        "background": "#000000",
+        "success": "#7cfc00",
+        "info": "#40e0d0",
+        "warning": "#ffc125",
+        "error": "#ff4500",
+        "jegg": "#ee00ee"
+    }
+}

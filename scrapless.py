@@ -24,50 +24,6 @@ import re
 from app import App
 
 '''
-Detects the lobby and determines the type of a lobby the player is currently in
-Additionally returns the name of the "target"
-'''
-def lobby_detect(screen_grab):
-
-    # determine the hunt only if we see the lobby
-    if cvt.detect_element(screen_grab, stng.LOBBY_SLC, stng.LOBBY_IMG, prec=0.7):
-
-        # check if escalation lobby
-        escalation_level = cvt.read_escalation_level(screen_grab, stng.ESCAL_LOBBY_SLC)
-
-        if escalation_level != '':
-            escalation_level = process.extractOne(escalation_level, stng.ESCAL_TIERS, scorer=fuzz.ratio, score_cutoff=90)
-
-            # return escalation mode and name
-            if escalation_level != None:
-                return 'ESCAL', escalation_level[0]
-
-        # determine behemoth name if method didn't exit with escalation level
-        behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_LOBBY_SLC, inverse=True, tess_config=stng.TESS_CONF, trim_size=50, thresh=145)
-
-        # process behemoth name if it is an actual hunt lobby
-        behemoth_name = utils.trim_behemoth_name(behemoth_name)
-        behemoth_name = fuzzy_behemoth(behemoth_name)
-
-        return 'HUNT', behemoth_name
-
-    return 'NO_LOBBY', ''
-
-
-'''
-Helper function which wraps all the lobby image detection and OCR under one name, 
-to clean up the main file code a little
-'''
-def lobby_reader(screen_grab):
-
-    # read threat level and hunt type
-    threat_level = cvt.read_threat_level(screen_grab, stng.THRT_SLC)
-    hunt_type = 'Patrol' if cvt.detect_element(screen_grab, stng.HTYPE_SLC, stng.HTYPE_IMG) else 'Pursuit'
-
-    return threat_level, hunt_type
-
-
-'''
 Helper function which wraps all the loot image detection and OCR under one name,
 to clean up the main file code a little
 '''
@@ -281,30 +237,6 @@ def loot_drops_reader(screen_grab, hunt_data):
 
     return loot_data
 
-
-'''
-When proivided with a behemoth name, returns the closes fuzzy match from the list
-of valid behemoth names, or empty string if the best match does not score high enough ratio
-similarity to the found name.
-'''
-def fuzzy_behemoth(behemoth_name):
-
-    if behemoth_name in stng.HUNT.keys():
-        return behemoth_name
-    else:
-        match = process.extractOne(behemoth_name, stng.HUNT.keys(), scorer=fuzz.ratio, score_cutoff=80)
-        return '' if match is None else match[0]
-
-
-def fuzzy_drop(drop, drop_list):
-
-    if drop in drop_list:
-        return drop
-    else:
-        match = process.extractOne(drop, drop_list, scorer=fuzz.ratio, score_cutoff=80)
-        return '' if match is None else match[0]
-
-
 '''
 Bread and butter of the program, running in a loop to continously
 read the screen of the user, in order to recover data and process
@@ -321,199 +253,222 @@ def blblblblb():
     # work in the loop of image recognition
     while True:
 
-        try:
+        # read for lobby screen if last seen in ramsgate
+        # ===========================================================================
+        if program_mode == 'RAMSGATE':
 
-            # read for lobby screen if last seen in ramsgate
-            # ===========================================================================
-            if program_mode == 'RAMSGATE':
+            # reset error count on return to ramsgate mode
+            error_count = 0
 
-                # reset error count on return to ramsgate mode
-                error_count = 0
+            # check for lobby screen
+            program_mode, hunt_data['behemoth'] = lobby_detect(screen_grab)
 
-                # check for lobby screen
-                program_mode, hunt_data['behemoth'] = lobby_detect(screen_grab)
+            # if no lobby detected, check for bounty drafting
+            if program_mode == 'NO_LOBBY':
+                
+                # if bounty screen detected, switch program mode 
+                if cvt.detect_element(screen_grab, stng.BOUNTY_DRAFT_SLC, stng.BOUNTY_DRAFT_IMG):
 
-                # if no lobby detected, check for bounty drafting
-                if program_mode == 'NO_LOBBY':
-                    
-                    # if bounty screen detected, switch program mode 
-                    if cvt.detect_element(screen_grab, stng.BOUNTY_DRAFT_SLC, stng.BOUNTY_DRAFT_IMG):
+                    system_message = 'Bounty drafting screen detected, processing...'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
+                    program_mode = 'IN_DRAFT'
 
-                        system_message = 'Bounty drafting screen detected, processing...'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                        program_mode = 'IN_DRAFT'
+                # otherwise go back to default mode
+                else:
+                    program_mode = 'RAMSGATE'
 
-                    # otherwise go back to default mode
+
+            # if Escalation detected, wait for results screen
+            elif program_mode == 'ESCAL':
+                
+                system_message = f'{hunt_data["behemoth"]} detected, but won\'t be read for results.'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
+                program_mode = 'RAMSGATE'
+                time.sleep(120)
+            
+
+            # if Hunt detected, proceed to read lobby further
+            elif program_mode == 'HUNT':
+
+                system_message = 'Hunt lobby detected, reading...'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
+                hunt_data['threat'], hunt_data['type'] = lobby_reader(screen_grab)
+
+                # determine between a Hunt and a Trial
+                if hunt_data['threat'] <= 17:
+
+                    # inform user if retrieved hunt details are invalid
+                    if utils.validate_hunt(hunt_data):
+
+                        system_message = f'Valid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, awaiting loot screen...'
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                        program_mode = 'IN_HUNT'
+                        
                     else:
+
+                        system_message = f'Invalid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, retrying...'
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
                         program_mode = 'RAMSGATE'
 
+                else: 
 
-                # if Escalation detected, wait for results screen
-                elif program_mode == 'ESCAL':
-                    
-                    system_message = f'{hunt_data["behemoth"]} detected, but won\'t be read for results.'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)                    
+                    system_message = utils.trial_hype_line(hunt_data['threat'])
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
+                    program_mode = 'IN_TRIAL'
+
+
+        # if bounty drafting detected, inform the user and proceed to read the screen
+        # ===========================================================================
+        elif program_mode == 'IN_DRAFT':
+
+            # read bounty reward and translate it to names
+            bounty_value = cvt.read_bounty_value(screen_grab, stng.BOUNTY_VAL_SLC)
+            bounty_tier = utils.get_bounty_tier(bounty_value)
+
+            if bounty_tier == 'ERROR':
+
+                # increment error counter
+                error_count += 1
+                
+                # inform the user of retrying and loop back if error threshold not reached
+                if error_count <= 5:
+
+                    system_message = f'WARNING: Invalid bounty value of {bounty_value} detected. Retrying...'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+                
+                elif error_count > 5:
+
+                    system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
                     program_mode = 'RAMSGATE'
-                    time.sleep(120)
+
+            else:
+
+                system_message = f'{bounty_tier} bounty drafting detected. Awaiting draft end.'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                program_mode = 'END_DRAFT'
+
+
+        # if bounty tier detected, wait for the end of drafting
+        # ===========================================================================
+        elif program_mode == 'END_DRAFT':
+
+            # detect the player returning to bounty menu
+            if cvt.detect_element(screen_grab, stng.BOUNTY_MENU_SLC, stng.BOUNTY_MENU_IMG):
+
+                bounty_data = {
+                    'rarity': bounty_tier,
+                    'patch_ver': stng.GAME_VER,
+                    'user': stng.USER
+                }
+
+                system_message = f'Submitted data: {" - ".join(bounty_data.values())}.'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                program_mode = 'RAMSGATE'
+                
+                # submit data
+                forms.bounty_form_submit(bounty_data)
+
+
+        # if trial lobby detected, wait for loot to display a message
+        # ===========================================================================
+        elif program_mode == 'IN_TRIAL':
+
+            # if loot screen detected
+            if cvt.detect_element(screen_grab, stng.TRIAL_RES_SLC, stng.TRIAL_RES_IMG):
                 
 
-                # if Hunt detected, proceed to read lobby further
-                elif program_mode == 'HUNT':
+                # read behemoth name on loot screen
+                behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_TRIAL_SLC, inverse=True, tess_config=stng.TESS_CONF)
+                behemoth_name = utils.trim_behemoth_name(behemoth_name)
 
-                    system_message = 'Hunt lobby detected, reading...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    hunt_data['threat'], hunt_data['type'] = lobby_reader(screen_grab)
+                # print a line depending on victory or defeat
+                if behemoth_name == 'Defeated':
 
-                    # determine between a Hunt and a Trial
-                    if hunt_data['threat'] <= 17:
+                    system_message = utils.trial_defeat_line(threat_level)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
-                        # inform user if retrieved hunt details are invalid
-                        if utils.validate_hunt(hunt_data):
+                else:
 
-                            system_message = f'Valid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, awaiting loot screen...'
-                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                            program_mode = 'IN_HUNT'
-                            
-                        else:
+                    system_message = utils.trial_victory_line(threat_level)
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
 
-                            system_message = f'Invalid hunt detected: {hunt_data["behemoth"]} T{hunt_data["threat"]} {hunt_data["type"]}, retrying...'
-                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                            program_mode = 'RAMSGATE'
-
-                    else: 
-
-                        system_message = utils.trial_hype_line(hunt_data['threat'])
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
-                        program_mode = 'IN_TRIAL'
+                # return to normal operation of the program
+                program_mode = 'RAMSGATE'
 
 
-            # if bounty drafting detected, inform the user and proceed to read the screen
-            # ===========================================================================
-            elif program_mode == 'IN_DRAFT':
+        # await loot screen if currently in a regular hunt
+        # ===========================================================================
+        elif program_mode == 'IN_HUNT':
 
-                # read bounty reward and translate it to names
-                bounty_value = cvt.read_bounty_value(screen_grab, stng.BOUNTY_VAL_SLC)
-                bounty_tier = utils.get_bounty_tier(bounty_value)
+            # if loot screen detected, set program to read loot
+            if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.8):
+                
+                system_message = f'Loot screen detected, processing...'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
+                program_mode = 'IN_LOOT'
 
-                if bounty_tier == 'ERROR':
 
+        # read loot data if in loot screen
+        # ===========================================================================
+        elif program_mode == 'IN_LOOT':
+
+            # read loot data
+            loot_status, loot_data = loot_screen_reader(screen_grab, hunt_data, overlay_labels)
+
+            # accept defeat and reset program mode
+            if loot_status == 'DEFEAT':
+
+                system_message = 'DEFEAT: The party has been defeated, no data will be submitted.\n'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
+                hunt_data = {}
+                program_mode = 'RAMSGATE'
+
+
+            # otherwise, if everything is fine, submit data
+            elif loot_status == 'OK':
+
+                for data in loot_data:
+                    forms.loot_drop_submit(data)
+
+                system_message = f'Loot data submitted.\n'
+                overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
+                hunt_data = {}
+                program_mode = 'RAMSGATE'
+
+
+            # otherwise, if error occured, retry
+            elif loot_status == 'ERROR':
+
+                # if suspicious loot numbers are present, save screenshot for future reference
+                if loot_data ==  'TOO_MANY_DROPS':
+                    system_message = f'ERROR: Suspiciously big stack of loot. Screenshot saved, data won\'t be submitted.'
+                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+
+                    # prepare a path for saving the error-causing
+                    path = './error_imgs/'
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    
+                    # transform error image grab for saving
+                    err_grab = np.array(screen_grab)
+                    err_grab = cv2.cvtColor(err_grab, cv2.COLOR_RGB2BGR)
+
+                    # save error grab to disk
+                    cv2.imwrite(f'{path}{uuid4()}.png', err_grab)
+
+                    program_mode = 'RAMSGATE'
+
+                # otherwise handle the error normally
+                else:
                     # increment error counter
                     error_count += 1
                     
                     # inform the user of retrying and loop back if error threshold not reached
                     if error_count <= 5:
 
-                        system_message = f'WARNING: Invalid bounty value of {bounty_value} detected. Retrying...'
+                        system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
                         overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                    
-                    elif error_count > 5:
-
-                        system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
-                        program_mode = 'RAMSGATE'
-
-                else:
-
-                    system_message = f'{bounty_tier} bounty drafting detected. Awaiting draft end.'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode = 'END_DRAFT'
-
-
-            # if bounty tier detected, wait for the end of drafting
-            # ===========================================================================
-            elif program_mode == 'END_DRAFT':
-
-                # detect the player returning to bounty menu
-                if cvt.detect_element(screen_grab, stng.BOUNTY_MENU_SLC, stng.BOUNTY_MENU_IMG):
-
-                    bounty_data = {
-                        'rarity': bounty_tier,
-                        'patch_ver': stng.GAME_VER,
-                        'user': stng.USER
-                    }
-
-                    system_message = f'Submitted data: {" - ".join(bounty_data.values())}.'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    program_mode = 'RAMSGATE'
-                    
-                    # submit data
-                    forms.bounty_form_submit(bounty_data)
-
-
-            # if trial lobby detected, wait for loot to display a message
-            # ===========================================================================
-            elif program_mode == 'IN_TRIAL':
-
-                # if loot screen detected
-                if cvt.detect_element(screen_grab, stng.TRIAL_RES_SLC, stng.TRIAL_RES_IMG):
-                    
-
-                    # read behemoth name on loot screen
-                    behemoth_name = cvt.read_behemoth(screen_grab, stng.BHMT_TRIAL_SLC, inverse=True, tess_config=stng.TESS_CONF)
-                    behemoth_name = utils.trim_behemoth_name(behemoth_name)
-
-                    # print a line depending on victory or defeat
-                    if behemoth_name == 'Defeated':
-
-                        system_message = utils.trial_defeat_line(threat_level)
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
-
-                    else:
-
-                        system_message = utils.trial_victory_line(threat_level)
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_JEGG, overlay_labels)
-
-                    # return to normal operation of the program
-                    program_mode = 'RAMSGATE'
-
-
-            # await loot screen if currently in a regular hunt
-            # ===========================================================================
-            elif program_mode == 'IN_HUNT':
-
-                # if loot screen detected, set program to read loot
-                if cvt.detect_element(screen_grab, stng.LOOT_SLC, stng.LOOT_IMG, prec=0.8):
-                    
-                    system_message = f'Loot screen detected, processing...'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_INFO, overlay_labels)
-                    program_mode = 'IN_LOOT'
-
-
-            # read loot data if in loot screen
-            # ===========================================================================
-            elif program_mode == 'IN_LOOT':
-
-                # read loot data
-                loot_status, loot_data = loot_screen_reader(screen_grab, hunt_data, overlay_labels)
-
-                # accept defeat and reset program mode
-                if loot_status == 'DEFEAT':
-
-                    system_message = 'DEFEAT: The party has been defeated, no data will be submitted.\n'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-                    hunt_data = {}
-                    program_mode = 'RAMSGATE'
-
-
-                # otherwise, if everything is fine, submit data
-                elif loot_status == 'OK':
-
-                    for data in loot_data:
-                        forms.loot_drop_submit(data)
-
-                    system_message = f'Loot data submitted.\n'
-                    overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_SUCCESS, overlay_labels)
-                    hunt_data = {}
-                    program_mode = 'RAMSGATE'
-
-
-                # otherwise, if error occured, retry
-                elif loot_status == 'ERROR':
-
-                    # if suspicious loot numbers are present, save screenshot for future reference
-                    if loot_data ==  'TOO_MANY_DROPS':
-                        system_message = f'ERROR: Suspiciously big stack of loot. Screenshot saved, data won\'t be submitted.'
-                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
 
                         # prepare a path for saving the error-causing
                         path = './error_imgs/'
@@ -526,47 +481,17 @@ def blblblblb():
 
                         # save error grab to disk
                         cv2.imwrite(f'{path}{uuid4()}.png', err_grab)
+                        
+                        program_mode = 'IN_LOOT'
+                        time.sleep(error_count)
 
+                    elif error_count > 5:
+
+                        system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
+                        overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
+
+                        hunt_data = {}
                         program_mode = 'RAMSGATE'
-
-                    # otherwise handle the error normally
-                    else:
-                        # increment error counter
-                        error_count += 1
-                        
-                        # inform the user of retrying and loop back if error threshold not reached
-                        if error_count <= 5:
-
-                            system_message = f'WARNING: Expected behemoth {loot_data["lobby_behemoth"]} but found {loot_data["loot_behemoth"]}. Retrying...'
-                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_WARNING, overlay_labels)
-
-                            # prepare a path for saving the error-causing
-                            path = './error_imgs/'
-                            if not os.path.exists(path):
-                                os.makedirs(path)
-                            
-                            # transform error image grab for saving
-                            err_grab = np.array(screen_grab)
-                            err_grab = cv2.cvtColor(err_grab, cv2.COLOR_RGB2BGR)
-
-                            # save error grab to disk
-                            cv2.imwrite(f'{path}{uuid4()}.png', err_grab)
-                            
-                            program_mode = 'IN_LOOT'
-                            time.sleep(error_count)
-
-                        elif error_count > 5:
-
-                            system_message = 'ERROR: Retry limit reached. Data will not be submitted.\n'
-                            overlay_labels = system_output(system_message, stng.OVERLAY_COLOR_ERROR, overlay_labels)
-
-                            hunt_data = {}
-                            program_mode = 'RAMSGATE'
-                        
-
-        # log any exceptions encountered by the program
-        except Exception:
-            stng.LOG.error('An exception has occured: ')
 
 
 def main():
@@ -580,12 +505,14 @@ def main():
         # capture the screen
         scrapless.screenCap()
 
-        # refresh the overlay to keep it responsive, if present
-        if scrapless.overlay:
+        scrapless.processScreen()
+
+        # # refresh the overlay to keep it responsive, if present
+        if scrapless.overlay.enabled:
             scrapless.overlay.refresh()
 
         # throttle the loop for performance
-        time.sleep(0.5)
+        time.sleep(0.25)
 
 
 '''
