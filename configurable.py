@@ -65,16 +65,19 @@ class Configurable:
     A generic method for reading and returning a specified key from config file
     Raises an exception when the key is not present in the config dictionary
     '''
-    def readKey(self, key):
+    def readKey(self, key, file = '', path = ''):
+
+        file = self.conf_file if file == '' else file
+        path = self.conf_path if path == '' else path
 
         # check if the key exists in the configuration
-        if key in self.conf_file.keys():
+        if key in file.keys():
 
             # retrieve the value of the key
-            val = self.conf_file[key]
+            val = file[key]
 
             # return the value
             return val
 
         # otherwise raise an exception
-        raise KeyError(f'key {key} not found; in {self.conf_path}')
+        raise KeyError(f'key {key} not found; in {path}')

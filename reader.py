@@ -53,7 +53,8 @@ class Reader(Configurable):
     '''
     def readText(self, image, ocr_config, thresh_val, 
                 speck_size = 1, scale_x = 1, scale_y = 1, 
-                border_size = 100, shrink_border = 5, invert = False):
+                border_size = 100, shrink_border = 5, 
+                invert = False, debug=False):
 
         # convert the input image to grayscale for better reading
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -78,7 +79,8 @@ class Reader(Configurable):
         # trim the white border from around the image, to increase OCR quality
         image = self._trimBorder(image, border_size, shrink_border)
 
-        cv2.imwrite('./debug_data/test_text.png', image)
+        if debug:
+            cv2.imwrite('./debug_data/debug_text.png', image)
 
         # call PyTesseract reader function and return the found text
         return pytesseract.image_to_string(image, lang='eng', config=ocr_config)
@@ -114,7 +116,7 @@ class Reader(Configurable):
 
         # split text into an array
         text_arr = text.split(' ')
-
+        
         # determine defeat
         if_defeat = text_arr[0] == 'Defeated'
 

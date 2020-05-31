@@ -2,14 +2,18 @@ import pytesseract
 import pyautogui
 import os
 import logging
+import cv2
+import random
 
 import numpy as np
 
+from uuid import uuid4
 from datetime import datetime
 
 from configurable import Configurable
 from overlay import Overlay
 from lobby_reader import LobbyReader
+from loot_reader import LootReader
 
 '''
 Primary application class, with all necessary components
@@ -23,7 +27,7 @@ class App(Configurable):
     #
     # data about this program 
     PRG_NAME = 'Scrapless'
-    PRG_VERS = '1.0.0.0'
+    PRG_VERS = '1.0.0'
 
     # path for config file
     SLF_PATH = './data/json/config/config.json'
@@ -58,8 +62,12 @@ class App(Configurable):
         # initialise a lobby reader
         self.lobby_reader = LobbyReader()
 
+        # initialise a loot reader
+        self.loot_reader = LootReader()
+
         # data holders
         self.hunt_data = {}
+        self.loot_data = {}
         self.bounty_data = {}
 
     '''
@@ -80,41 +88,12 @@ class App(Configurable):
     '''
     def processScreen(self):
 
-        # try to read lobby only if no hunt data yet
-        if len(self.hunt_data) == 0:
+        # process the lobby if needed
+        self._processLobby()
 
-            # detect if the screen is a lobby
-            if self.lobby_reader.detectScreen(self.screen_capture):
+        # process the loot if needed
+        self._processLoot()
 
-                # inform about detection
-                self.writeOutput(f'Lobby screen detected, processing...', 'info')
-
-                # process lobby screen and return data
-                self.hunt_data = self.lobby_reader.readScreen(self.screen_capture)
-
-                # determine if screen is valid
-                if self.hunt_data['valid']:
-
-                    # check if there is a behemoth name
-                    if self.hunt_data['behemoth'] != '':
-
-                        # report read data
-                        self.writeOutput(f'Valid hunt detected: T{self.hunt_data["threat"]} ' + 
-                                        f'{self.hunt_data["behemoth"]}, {self.hunt_data["type"]}. ' +
-                                        f'Awaiting loot screen...', 'success')
-
-                    # otherwise, if escalation screen
-                    elif self.hunt_data['escalation'] != '':
-
-                        # report on this
-                        self.writeOutput(f'Valid hunt detected: {self.hunt_data["escalation"]}. ' +
-                                        f'Loot data won\' be recorded.', 'info')
-                
-                # if not, report that to the user
-                else:
-
-                    # write out warning line
-                    self.writeOutput(f'Invalid hunt detected, retrying...', 'warning')
 
     '''
     Method for printing out an output to logs and to overlay
@@ -130,6 +109,10 @@ class App(Configurable):
         # write out to log
         self.logger.info(text)
 
+        # in case of error, save current screen
+        if colour == 'error':
+            cv2.imwrite(f'debug_data/{uuid4()}.png', cv2.cvtColor(self.screen_capture, cv2.COLOR_RGB2BGR))
+
     '''
     Method for creating folders for logging
     In: nothing
@@ -143,6 +126,131 @@ class App(Configurable):
             # create folder if it does not exist
             if not os.path.exists(path):
                 os.makedirs(path)
+
+    '''
+    Internal method for detecting and processing lobby screen. Convenience function to make other code
+    more functional
+    In: none
+    Out: none
+    '''
+    def _processLobby(self):
+
+        # try to read lobby only if no hunt data yet
+        if len(self.hunt_data) == 0:
+
+            # detect if the screen is a lobby
+            if self.lobby_reader.detectScreen(self.screen_capture):
+
+                # inform about detection
+                self.writeOutput(f'Lobby screen detected, processing...', 'info')
+
+                # process lobby screen and return data
+                data = self.lobby_reader.readScreen(self.screen_capture)
+
+                # determine if screen is valid
+                if data['valid']:
+
+                    # check if there is a behemoth name
+                    if data['behemoth'] != '':
+
+                        # report read data
+                        self.writeOutput(f'Valid hunt detected: T{data["threat"]} ' + 
+                                        f'{data["behemoth"]}, {data["tier"]} {data["type"]}. ' +
+                                        f'Awaiting loot screen...', 'success')
+
+                    # otherwise, if escalation screen
+                    elif data['escalation'] != '':
+
+                        # report on this
+                        self.writeOutput(f'Valid hunt detected: {data["escalation"]}. ' +
+                                        f'Loot data won\'t be recorded.', 'info')
+                
+                    # regardless, update the data
+                    self.hunt_data = data
+
+                # if not, report that to the user
+                else:
+
+                    # write out warning line
+                    self.writeOutput(f'Invalid hunt detected, retrying...', 'warning')
+
+    '''
+    Internal method for detecting and processing lobby screen, Convenience function to make other code
+    more functional
+    '''
+    def _processLoot(self):
+
+        # try to read loot only if hunt data present
+        if len(self.hunt_data) > 0 and len(self.loot_data) <= 0:
+
+            # detect if screen is a loot screen
+            if self.loot_reader.detectScreen(self.screen_capture):
+
+                # process basic loot screen data
+                data = self.loot_reader.readScreen(self.screen_capture)
+
+                # check if the party was defeated
+                if data['defeat']:
+
+                    # inform the user, abandon processing
+                    self.writeOutput(f'Party defeated, no data will be submitted', 'warning')
+
+                # check for data validity
+                elif data['behemoth'] == self.hunt_data['behemoth'] or self.hunt_data['behemoth'] in self.lobby_reader.valid_hunts.keys():
+
+                    # inform that more in-depth reading will now take place
+                    self.writeOutput(f'Valid loot screen detected, verifying...', 'info')
+
+                    # update hunt data
+                    self.hunt_data.update(data)
+
+                    # attempt to read the loot
+                    try:
+                        # store loot data in memory
+                        self.loot_data = self.loot_reader.readLoot(self.screen_capture, self.hunt_data['behemoth'])
+                        self.loot_data = self._processLootData()
+
+                        print(self.loot_data)
+
+                    # in case OCR read anomalous stack of items, handle error internally
+                    except ValueError as e:
+                        self.writeOutput(e, 'error')
+
+                # inform the reading will be attempted again
+                else:
+                    self.writeOutput(f'Invalid loot screen detected, retrying...', 'error')
+
+    '''
+    Internal method for sampling the loot data into what will be submitted
+    In: nothing
+    Out: sampled data
+    '''
+    def _processLootData(self):
+
+        # determine slay roll count
+        slay_rolls = 2 + (3 - self.hunt_data['deaths']) + (2 * self.hunt_data['elite'])
+
+        # compensate for a bug with Elite loot display
+        slay_rolls -= 2 * (self.hunt_data['tier'] == 'Heroic+' and 
+                            self.hunt_data['behemoth'] not in ['Shrowd', 'Rezakiri'] and
+                            self.hunt_data['elite'])
+
+        # calculate how many drops to sample out from the data
+        # sampling is necessary because of numerous display bugs on loot screen
+        sample_count = slay_rolls * 2 if len(self.loot_data) >= slay_rolls * 2 else slay_rolls
+
+        # fill submission data with dyes if present -- we always add dyes to submission data
+        # because they can't drop from part break
+        submit_data = [drop for drop in self.loot_data if drop['rarity'] == 'Artifact (Dye)']
+
+        # data from which to draw samples
+        source_data = [drop for drop in self.loot_data if drop['rarity'] != 'Artifact (Dye)']
+
+        # draw the samples, reducing their number by dye drops present
+        sample_data = random.sample(source_data, sample_count - len(submit_data))
+
+        # return sampled data
+        return [*submit_data, *sample_data]
 
     '''
     Method for initialising the logger and returning it

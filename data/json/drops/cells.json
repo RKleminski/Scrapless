@@ -1,60 +1,170 @@
 {
-    "Cells": [
-        "Assassin's Vigour Cell",
-        "Bloodless Cell",
-        "Fireproof Cell",
-        "Fortress Cell",
-        "Guardian Cell",
-        "Iceborne Cell",
-        "Insulated Cell",
-        "Nine Lives Cell",
-        "Shellshock Resist Cell",
-        "Strategist Cell",
-        "Sturdy Cell",
-        "Tough Cell",
-        "Warmth Cell",
-        "Agility Cell",
-        "Conditioning Cell",
-        "Endurance Cell",
-        "Evasion Cell",
-        "Fleet Footed Cell",
-        "Grace Cell",
-        "Nimble Cell",
-        "Sprinter Cell",
-        "Swift Cell",
-        "Aetherhunter Cell",
-        "Deconstruction Cell",
-        "Discipline Cell",
-        "Knockout King Cell",
-        "Overpower Cell",
-        "Pacifier Cell",
-        "Rage Cell",
-        "Ragehunter Cell",
-        "Sharpened Cell",
-        "Acidic Cell",
-        "Adrenaline Cell",
-        "Barbed Cell",
-        "Berserker Cell",
-        "Bladestorm Cell",
-        "Cunning Cell",
-        "Evasive Fury Cell",
-        "Merciless Cell",
-        "Molten Cell",
-        "Predator Cell",
-        "Savagery Cell",
-        "Weighted Strikes Cell",
-        "Wild Frenzy Cell",
-        "Aetherborne Cell",
-        "Aetheric Attunement Cell",
-        "Aetheric Frenzy Cell",
-        "Conduit Cell",
-        "Energized Cell",
-        "Engineer Cell",
-        "Lucent Cell",
-        "Medic Cell",
-        "Mender Cell",
-        "Stunning Vigour Cell",
-        "Vampiric Cell",
-        "Zeal Cell"
-    ]
+    "Assassin's Vigour": {
+        "Type": "Defence"
+    },
+    "Bloodless": {
+        "Type": "Defence"
+    },
+    "Fireproof": {
+        "Type": "Defence"
+    },
+    "Fortress": {
+        "Type": "Defence"
+    },
+    "Guardian": {
+        "Type": "Defence"
+    },
+    "Iceborne": {
+        "Type": "Defence"
+    },
+    "Insulated": {
+        "Type": "Defence"
+    },
+    "Nine Lives": {
+        "Type": "Defence"
+    },
+    "Shellshock Resist": {
+        "Type": "Defence"
+    },
+    "Strategist": {
+        "Type": "Defence"
+    },
+    "Sturdy": {
+        "Type": "Defence"
+    },
+    "Tough": {
+        "Type": "Defence"
+    },
+    "Warmth": {
+        "Type": "Defence"
+    },
+    "Agility": {
+        "Type": "Mobility"
+    },
+    "Conditioning": {
+        "Type": "Mobility"
+    },
+    "Endurance": {
+        "Type": "Mobility"
+    },
+    "Evasion": {
+        "Type": "Mobility"
+    },
+    "Fleet Footed": {
+        "Type": "Mobility"
+    },
+    "Grace": {
+        "Type": "Mobility"
+    },
+    "Nimble": {
+        "Type": "Mobility"
+    },
+    "Sprinter": {
+        "Type": "Mobility"
+    },
+    "Swift": {
+        "Type": "Mobility"
+    },
+    "Aetherhunter": {
+        "Type": "Power"
+    },
+    "Deconstruction": {
+        "Type": "Power"
+    },
+    "Discipline": {
+        "Type": "Power"
+    },
+    "Knockout King": {
+        "Type": "Power"
+    },
+    "Overpower": {
+        "Type": "Power"
+    },
+    "Pacifier": {
+        "Type": "Power"
+    },
+    "Rage": {
+        "Type": "Power"
+    },
+    "Ragehunter": {
+        "Type": "Power"
+    },
+    "Sharpened": {
+        "Type": "Power"
+    },
+    "Acidic": {
+        "Type": "Technique"
+    },
+    "Adrenaline": {
+        "Type": "Technique"
+    },
+    "Barbed": {
+        "Type": "Technique"
+    },
+    "Berserker": {
+        "Type": "Technique"
+    },
+    "Bladestorm": {
+        "Type": "Technique"
+    },
+    "Cunning": {
+        "Type": "Technique"
+    },
+    "Evasive Fury": {
+        "Type": "Technique"
+    },
+    "Merciless": {
+        "Type": "Technique"
+    },
+    "Molten": {
+        "Type": "Technique"
+    },
+    "Predator": {
+        "Type": "Technique"
+    },
+    "Savagery": {
+        "Type": "Technique"
+    },
+    "Weighted Strikes": {
+        "Type": "Technique"
+    },
+    "Wild Frenzy": {
+        "Type": "Technique"
+    },
+    "Aetherborne": {
+        "Type": "Utility"
+    },
+    "Aetheric Attunement": {
+        "Type": "Utility"
+    },
+    "Aetheric Frenzy": {
+        "Type": "Utility"
+    },
+    "Conduit": {
+        "Type": "Utility"
+    },
+    "Energized": {
+        "Type": "Utility"
+    },
+    "Engineer": {
+        "Type": "Utility"
+    },
+    "Lucent": {
+        "Type": "Utility"
+    },
+    "Medic": {
+        "Type": "Utility"
+    },
+    "Mender": {
+        "Type": "Utility"
+    },
+    "Stunning Vigour": {
+        "Type": "Utility"
+    },
+    "Vampiric": {
+        "Type": "Utility"
+    },
+    "Zeal": {
+        "Type": "Utility"
+    }
 }

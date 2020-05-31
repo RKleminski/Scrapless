@@ -1,12 +1,10 @@
 {
-    "Orbs": [
-        "Neutral Orb",
-        "Shock Orb",
-        "Blaze Orb",
-        "Frost Orb",
-        "Terra Orb",
-        "Dull Arcstone",
-        "Shining Arcstone",
-        "Peerless Arcstone"
-    ]
+    "Neutral Orb": "Common (Orb)",
+    "Shock Orb": "Common (Orb)",
+    "Blaze Orb": "Common (Orb)",
+    "Frost Orb": "Common (Orb)",
+    "Terra Orb": "Common (Orb)",
+    "Dull Arcstone": "Uncommon (Orb)",
+    "Shining Arcstone": "Rare (Orb)",
+    "Peerless Arcstone": "Epic (Orb)"
 }

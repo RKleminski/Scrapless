@@ -12,27 +12,27 @@ class LobbyReader(Reader):
     #
     # CLASS VARIABLES
     #
-    # path to the folder in which all slice specs are contained
+    # path to the folder with screen slices
     SLC_PATH = './data/json/screen/lobby'
     # expected slices to be found
     SLC_CODE = ['behemoth', 'detect', 'escalation', 'hunt_type', 'threat']
     
-    # path to the folder in which all target images are contained
-    TRG_PATH = './data/targets/lobby'
+    # path to the folder with screen slices
+    TRGT_PATH = './data/targets/lobby'
     # expected targets to be found
-    TRG_CODE = ['detect', 'hunt_type']
+    TRGT_CODE = ['detect', 'hunt_type']
     
     # path to valid hunt file
-    HNT_PATH = './data/json/huntdata/hunts.json'
+    HUNT_PATH = './data/json/huntdata/hunts.json'
 
     # path to hunt tiers
-    TIE_PATH = './data/json/huntdata/tiers.json'
+    TIER_PATH = './data/json/huntdata/tiers.json'
 
     # path to escalation tiers
     ESC_PATH = './data/json/huntdata/escalation_tiers.json'
 
     # path to elements
-    ELM_PATH = './data/json/huntdata/elements.json'
+    ELEM_PATH = './data/json/huntdata/elements.json'
 
     def __init__(self):
         
@@ -40,13 +40,19 @@ class LobbyReader(Reader):
         self.slices = self._setSlices(self.SLC_PATH, self.SLC_CODE)
 
         # load target images of the screen
-        self.targets = self._setTargets(self.TRG_PATH, self.TRG_CODE)
+        self.targets = self._setTargets(self.TRGT_PATH, self.TRGT_CODE)
 
         # load valid hunt dictionary
-        self.valid_hunts = self.readFile(self.HNT_PATH)
+        self.valid_hunts = self.readFile(self.HUNT_PATH)
 
         # load hunt tier dictionary
-        self.hunt_tiers = self.readFile(self.TIE_PATH)
+        self.hunt_tiers = self.readFile(self.TIER_PATH)
+
+        # load element array
+        self.elements = self._readArrayFile('Elements', self.ELEM_PATH)
+
+        # load escalation tier array
+        self.esca_tiers = self._readArrayFile('Tiers', self.ESC_PATH)
 
         # load escalation names array
         self.escal_names = self._readValidEscas()
@@ -75,7 +81,7 @@ class LobbyReader(Reader):
 
         # read lobby screen data
         data['behemoth'] = self._readBehemoth(image)
-        data['escalation'] = self._readEsca(image)
+        data['escalation'] = self._readEsca(image) if data['behemoth'] == '' else ''
         data['threat'] = self._readThreat(image)
         data['type'] = 'Patrol' if self._detectFromSlice(image, 'hunt_type') else 'Pursuit'
         data['tier'] = self._readTier(data['threat'])
@@ -97,10 +103,26 @@ class LobbyReader(Reader):
         image = self.slices[slice_name].sliceImage(image)
 
         # call the parent method for detecting element
-        detected, loc = self.detectElement(image, self.targets[slice_name])
+        detected, loc = self.detectElement(image, self.targets[slice_name], prec=0.9)
 
         # return the detection value
         return detected
+
+    '''
+    Method for reading elements from appropriate JSON file
+    In: none
+    Out: element string rray
+    '''
+    def _readArrayFile(self, key, path):
+
+        # read the file
+        arr_file = self.readFile(path)
+
+        # read the key out of the file
+        value = self.readKey(key, file=arr_file, path=path)
+
+        # return the values
+        return value
 
     '''
     Wrapper method for reading off the slice, launches reader with parametres for behemoth name
@@ -137,7 +159,7 @@ class LobbyReader(Reader):
 
         # launch the reader function
         text = self.readText(image, ocr_config='--psm 13', thresh_val=170, speck_size=1,
-                            scale_x=6, scale_y=7, border_size=20, invert=True)
+                            scale_x=1, scale_y=1, border_size=5, invert=True)
 
         # match the name against allowed escalation names
         text = self._fuzzyMatch(text, self.escal_names, 80)
@@ -191,11 +213,8 @@ class LobbyReader(Reader):
         # read escalation tier file
         tiers = self.readFile(self.ESC_PATH)['Tiers']
 
-        # read elements
-        elems = self.readFile(self.ELM_PATH)['Elements']
-
         # combine tiers of escalations with elements
-        names = [f'{elem} {tier}' for elem in elems for tier in tiers]
+        names = [f'{elem} {tier}' for elem in self.elements for tier in tiers]
 
         # return the resulting list
         return names
