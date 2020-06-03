@@ -19,9 +19,11 @@ Inherits after Configurable to grant access to readFile
 '''
 class Reader(Configurable):
 
-    # Empty constructor existing for the sake of placeholding
+    # constructor existing for the sake of placeholding
     def __init__(self):
-        pass
+        
+        self.slices = {}
+        self.targets = {}
 
     '''
     Generic method for detecting an element on the screen slice
@@ -29,7 +31,7 @@ class Reader(Configurable):
     Returns boolean value indicating if element was detected, and the location
     of maximum detection value
     '''
-    def detectElement(self, image, target, prec = 0.8):
+    def detectElement(self, image, target, prec=0.8):
 
         # convert the input image to grayscale for better detection
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -44,6 +46,22 @@ class Reader(Configurable):
         if max_val < prec:
             return False, max_loc
         return True, max_loc
+
+    '''
+    Method for wrapping operations necessary to detect an element in a slice
+    In: screenshot of the game lobby
+    Out: boolean detection value
+    '''
+    def detectFromSlice(self, image, slice_name, prec=0.8):
+
+        # slice the input image
+        image = self.slices[slice_name].sliceImage(image)
+
+        # call the parent method for detecting element
+        detected, loc = self.detectElement(image, self.targets[slice_name], prec=prec)
+
+        # return the detection value
+        return detected
 
     '''
     Generic method for reading text on the screen slice

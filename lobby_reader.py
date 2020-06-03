@@ -17,7 +17,7 @@ class LobbyReader(Reader):
     # expected slices to be found
     SLC_CODE = ['behemoth', 'detect', 'escalation', 'hunt_type', 'threat']
     
-    # path to the folder with screen slices
+    # path to the folder with target images
     TRGT_PATH = './data/targets/lobby'
     # expected targets to be found
     TRGT_CODE = ['detect', 'hunt_type']
@@ -59,14 +59,14 @@ class LobbyReader(Reader):
 
 
     '''
-    Method for detecting the relevant screen, wraps the _detectFromSlice wrapper
+    Method for detecting the relevant screen, wraps the detectFromSlice wrapper
     Uses in-class slice and target, with an image input
     Returns a boolean value
     '''
     def detectScreen(self, image):
 
         # return the detection value
-        return self._detectFromSlice(image, 'detect')
+        return self.detectFromSlice(image, 'detect')
 
     '''
     Method for reading all data off the lobby screen, and checks if it pertains to a valid
@@ -83,30 +83,14 @@ class LobbyReader(Reader):
         data['behemoth'] = self._readBehemoth(image)
         data['escalation'] = self._readEsca(image) if data['behemoth'] == '' else ''
         data['threat'] = self._readThreat(image)
-        data['type'] = 'Patrol' if self._detectFromSlice(image, 'hunt_type') else 'Pursuit'
+        data['type'] = 'Patrol' if self.detectFromSlice(image, 'hunt_type') else 'Pursuit'
         data['tier'] = self._readTier(data['threat'])
     
         # check for hunt validity
-        data['valid'] = self._validateHunt(data)
+        self._validateHunt(data)
 
         # return all read data
         return data
-
-    '''
-    Method for wrapping operations necessary to detect an element in a slice
-    In: screenshot of the game lobby
-    Out: boolean detection value
-    '''
-    def _detectFromSlice(self, image, slice_name):
-
-        # slice the input image
-        image = self.slices[slice_name].sliceImage(image)
-
-        # call the parent method for detecting element
-        detected, loc = self.detectElement(image, self.targets[slice_name], prec=0.9)
-
-        # return the detection value
-        return detected
 
     '''
     Method for reading elements from appropriate JSON file
@@ -185,7 +169,7 @@ class LobbyReader(Reader):
         return 0 if text == '' else int(text)
 
     '''
-    Method for reading the hunt tier based on threat level; returns error if not found
+    Method for reading the hunt tier based on threat level; raises an exception if not found
     In: threat level
     Out: hunt tier
     '''
@@ -200,8 +184,8 @@ class LobbyReader(Reader):
                 # return the name of the tier
                 return tier_name
 
-        # if we are here, no tier was viable
-        return 'error'
+        # if no tier was viable, raise an exception
+        raise ValueError(f'Invalid threat value of {threat}')
 
     '''
     Method for reading configuration files and returning valid escalations
@@ -226,18 +210,18 @@ class LobbyReader(Reader):
     '''
     def _validateHunt(self, data):
 
-        # check if behemoth in valid hunts
-        if data['behemoth'] in self.valid_hunts.keys():
-
-            # check if threat matches the behemoth
-            if data['threat'] in self.valid_hunts[data['behemoth']]:
-
-                # if so, return validity
-                return True
-
         # return validity if lobby is an escalation
         if data['escalation'] != '':
             return True
 
-        # otherwise, return invalid flag
-        return False
+        # check if behemoth in valid hunts
+        if data['behemoth'] in self.valid_hunts.keys():
+
+            # check if threat matches the behemoth
+            if data['threat'] in self.valid_hunts[data['behemoth']] or 'Trial' in data['tier']:
+
+                # if so, return validity
+                return True
+
+        # otherwise, raise an exception
+        raise ValueError(f'Invalid hunt detected -- T{data["threat"]} {data["behemoth"]}')

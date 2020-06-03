@@ -53,14 +53,25 @@ class LootReader(Reader):
         self.ocr_confuse = self.readFile(self.CNFS_PATH)
 
     '''
-    Method for detecting the relevant screen, wraps the _detectFromSlice wrapper
+    Method for detecting the relevant screen, wraps the detectFromSlice wrapper
     Uses in-class slice and target, with an image output
     Returns a boolean value
     '''
-    def detectScreen(self, image):
+    def detectLootScreen(self, image):
 
         # return the detection value
-        return self._detectFromSlice(image, 'detect')
+        return self.detectFromSlice(image, 'detect')
+
+    '''
+    Wrapper method for detecting the trial end screen using detectFromSlice
+    Uses in-class slice and targeg
+    In: image of the loot screen
+    Out: boolean value
+    '''
+    def detectTrialEnd(self, image):
+
+        # return the detection value
+        return self.detectFromSlice(image, 'trial')
 
     '''
     Method for reading basic data off the loot screen; these are not the actual drops
@@ -107,6 +118,8 @@ class LootReader(Reader):
         bonus_img = self.slices['bonus_drops'].sliceImage(image)
         bonus_data = self._readLootSlice(bonus_img)
 
+        print(bonus_data)
+
         # test drop processing
         base_data = [self._processLootLine(line, behemoth) for line in base_data if line != '']
         bonus_data = [self._processLootLine(line, behemoth) for line in bonus_data if line != '']
@@ -126,23 +139,7 @@ class LootReader(Reader):
     def _detectElite(self, image):
 
         # return the detection value
-        return self._detectFromSlice(image, 'elite')
-
-    '''
-    Method for wrapping operations necessary to detect an element in a slice
-    In: screenshot of the game lobby
-    Out: boolean detection value
-    '''
-    def _detectFromSlice(self, image, slice_name, prec=0.8):
-
-        # slice the input image
-        image = self.slices[slice_name].sliceImage(image)
-
-        # call the parent method for detecting element
-        detected, loc = self.detectElement(image, self.targets[slice_name], prec=prec)
-
-        # return the detection value
-        return detected
+        return self.detectFromSlice(image, 'elite')
 
     '''
     Internal method for processing the drop count
@@ -238,7 +235,9 @@ class LootReader(Reader):
             drop_name = line.split(' ', 1)[-1]
 
             # fuzzy match differently depending if this is a cell
-            if 'Cell' in drop_name:
+            # check for any of the listed strings, for fine-grained control against
+            # OCR mistakes
+            if any(x in drop_name for x in ['Call', 'Cell']):
                 drop_data = self._processCellLine(drop_name)
             else:
                 drop_data = self._processDropLine(drop_name, behemoth)
