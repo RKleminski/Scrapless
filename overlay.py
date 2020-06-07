@@ -6,7 +6,7 @@ import tkinter as tk
 import tkinter.font as tkfont
 
 import re
-import win32con
+import win32.lib.win32con as win32con
 
 '''
 A class that renders, manages and stores app overlay

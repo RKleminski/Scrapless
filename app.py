@@ -5,6 +5,7 @@ import logging
 import cv2
 import random
 import json
+import time
 
 import numpy as np
 
@@ -48,51 +49,71 @@ class App(Configurable):
     # max exceptions before abandoning the reading
     MAX_EXC = 5
 
+    # time variables
+    LOOP_INTER = 0.2
+    BNTY_INTER = 2.5
+    LBBY_INTER = 0.5
+    LOOT_INTER = 0.5
+
     def __init__(self):
         
-        # call parent class constructor
-        Configurable.__init__(self, self.SLF_PATH)
-
+        # PREPARE LOGGING FIRST TO ENSURE
+        # THE ABILITY TO OUTPUT ERROR LOGS
+        #
         # create logging folders
         self._makeLogDirs()
 
         # initialise the logger
         self.logger = self._setLogger()
 
-        # initialise overlay
-        self.overlay = Overlay(f'{self.PRG_NAME.upper()} {self.PRG_VERS}')
-        
-        # point pytesseract at tesseract installation
-        self._setPyTesseract()
+        # catch exceptions to log them
+        try:
 
-        # initialise a lobby reader
-        self.lobby_reader = LobbyReader()
+            # call parent class constructor
+            Configurable.__init__(self, self.SLF_PATH)
 
-        # initialise a loot reader
-        self.loot_reader = LootReader()
+            # initialise overlay
+            self.overlay = Overlay(f'{self.PRG_NAME.upper()} {self.PRG_VERS}')
+            
+            # point pytesseract at tesseract installation
+            self._setPyTesseract()
 
-        # initialise a bounty reader
-        self.bounty_reader = BountyReader()
+            # initialise a lobby reader
+            self.lobby_reader = LobbyReader()
 
-        # initialise a data sender
-        self.data_sender = DataSender()
+            # initialise a loot reader
+            self.loot_reader = LootReader()
 
-        # read user from config file
-        self.user = self._setUser()
+            # initialise a bounty reader
+            self.bounty_reader = BountyReader()
 
-        # read game patch
-        self.patch = self._setGamePatch()
+            # initialise a data sender
+            self.data_sender = DataSender()
 
-        # initialise screen capture as empty
-        self.screen_capture = None
+            # read user from config file
+            self.user = self._setUser()
 
-        # data holders
-        self.bounty_data = {}
-        self.lobby_data = {}
-        self.loot_data = []
+            # read game patch
+            self.patch = self._setGamePatch()
 
-        # exception counter for repeated issue handling
-        self.exc_counter = 0
+            # initialise screen capture as empty
+            self.screen_capture = None
+
+            # data holders
+            self.bounty_data = {}
+            self.lobby_data = {}
+            self.loot_data = []
+
+            # exception counter for repeated issue handling
+            self.exc_counter = 0
+
+        except Exception as e:
+
+            # log the exception
+            self.logger.error(str(e))
+
+            # shut down the app
+            quit()
 
     '''
     Capture new screenshot and store it within
@@ -201,34 +222,53 @@ class App(Configurable):
     '''
     def _processBounty(self):
 
-        # read only if both bounty  and loot data is empty
+        # read only if both bounty and loot data is empty
         if len(self.bounty_data) <= 0 and len(self.loot_data) <= 0:
-
+            
             # proceed if draft can be detected
             if self.bounty_reader.detectDraftStart(self.screen_capture):
 
                 # inform the user about the fact
                 self.writeOutput(f'Bounty draft detected, processing...', 'info')
 
-                # attempt to read the bounty
-                try:
+                # wait out the initial animation
+                time.sleep(self.BNTY_INTER)
 
-                    # store the data 
-                    self.bounty_data = self.bounty_reader.readScreen(self.screen_capture)
+                # enter a loop of attempting to read the bounty
+                self._processBountyLoop()
 
-                    # inform the user
-                    self.writeOutput(f'{self.bounty_data["rarity"]} bounty detected. Awaiting draft end...', 'success')
+    '''
+    Convenience function to keep attempting a bounty read until succeeding or
+    detecting that user exited the screen
+    '''
+    def _processBountyLoop(self):
 
-                # in case illegal value was found
-                except ValueError as e:
-                    self.writeOutput(str(e), 'warning')
+        # keep looping until valid bounty was read, or the user left the draft screen
+        while len(self.bounty_data) <= 0 and not self.bounty_reader.detectDraftEnd(self.screen_capture):
+
+            # capture a new screenshot
+            self.screenCap()
+
+            # attempt to read the bounty
+            try:
+
+                # store the data 
+                self.bounty_data = self.bounty_reader.readScreen(self.screen_capture)
+
+                # inform the user
+                self.writeOutput(f'{self.bounty_data["rarity"]} bounty detected. Awaiting draft end...', 'success')
+
+            # in case illegal value was found
+            except ValueError as e:
+                self.writeOutput(str(e), 'warning')
+
+            # wait briefly to get a better screen read
+            time.sleep(self.LOOP_INTER)
 
     '''
     Internal method for detecting and processing lobby screen
     more functional
     Updates lobby data as a result, unless an exception happens
-    In: none
-    Out: none
     '''
     def _processLobby(self):
 
@@ -241,41 +281,73 @@ class App(Configurable):
                 # inform about detection
                 self.writeOutput(f'Lobby screen detected, processing...', 'info')
 
-                # attempt reading the screen
-                try:
+                # wait briefly to avoid unnecessary errors
+                time.sleep(self.LBBY_INTER)
 
-                    # process lobby screen and return data
-                    data = self.lobby_reader.readScreen(self.screen_capture)
+                # enter the lobby-reading loop
+                self._processLobbyLoop()
 
-                    # if trial screen
-                    if 'Trial' in data['tier']:
+    '''
+    Convenience function to keep attempting a lobby read until succeeding or
+    detecting that user exited the screen
+    '''
+    def _processLobbyLoop(self):
 
-                        # report read data
-                        self.writeOutput(f'Uh-oh. Dis be a {data["tier"]}', 'jegg')
+        # while we can still see the lobby and we have no lobby data
+        while self.lobby_reader.detectScreen(self.screen_capture) and len(self.lobby_data) <= 0:
 
-                    # otherwise, if escalation screen
-                    elif data['escalation'] != '':
+            # update screen grab
+            self.screenCap()
 
-                        # report on this
-                        self.writeOutput(f'Valid hunt detected: {data["escalation"]}. ' +
-                                        f'Loot data won\'t be recorded.', 'info')                    
+            # attempt reading the screen
+            try:
 
-                    # otherwise, if actual behemoth
-                    elif data['behemoth'] != '':
+                # process lobby screen and save the data
+                self.lobby_data = self.lobby_reader.readScreen(self.screen_capture)
 
-                        # report read data
-                        self.writeOutput(f'Valid hunt detected -- T{data["threat"]} ' + 
-                                        f'{data["behemoth"]}, {data["tier"]} {data["type"]}. ' +
-                                        f'Awaiting loot screen...', 'success')
-                
-                    # regardless, update the data
-                    self.lobby_data = data
+                # write appropriate output
+                self._processLobbyOutput()
 
-                # handle an exception
-                except ValueError as e:
+            # handle an exception
+            except ValueError as e:
 
-                    # communicate the exception to the user
-                    self.writeOutput(str(e), 'warning')
+                # communicate the exception to the user
+                self.writeOutput(str(e), 'warning')
+
+            # wait briefly to get a better screen read
+            time.sleep(self.LOOP_INTER)
+
+    '''
+    Convenience function encompassing all possible text output for
+    when the program has read the lobby without any issues
+    '''
+    def _processLobbyOutput(self):
+
+        # get data to memory briefly, to simplify access
+        data = self.lobby_data
+
+        # if trial screen
+        if 'Trial' in data['tier']:
+
+            # report on trial tier
+            self.writeOutput(f'{data["tier"]} detected', 'success')
+
+        # otherwise, if escalation screen
+        elif data['escalation'] != '':
+
+            # report on escalation
+            self.writeOutput(f'Valid hunt detected: {data["escalation"]}. ' +
+                            f'Loot data won\'t be recorded.', 'info')                    
+
+        # otherwise, if actual behemoth
+        elif data['behemoth'] != '':
+
+            # report read data
+            self.writeOutput(f'Valid hunt detected -- T{data["threat"]} ' + 
+                            f'{data["behemoth"] if data["behemoth"] != data["tier"] else ""}' +
+                            f'{", " if data["behemoth"] != data["tier"] else ""}' +
+                            f'{data["tier"]} {data["type"]}. ' +
+                            f'Awaiting loot screen...', 'success')
 
     '''
     Internal method for detecting and processing loot screen
@@ -294,13 +366,8 @@ class App(Configurable):
                 # check for trial end screen
                 if self.loot_reader.detectTrialEnd(self.screen_capture):
 
-                    # process trial loot screen data
-                    data = self.loot_reader._readBehemoth(self.screen_capture)
-
-                    print(data)
-
                     # inform the user, abandon processing
-                    self.writeOutput(f'This was a tuff {self.lobby_data["tier"]}', 'jegg')
+                    self.writeOutput(f'{self.lobby_data["tier"]} has ended', 'success')
                     self.clearData()
 
 
@@ -317,47 +384,67 @@ class App(Configurable):
                         self.writeOutput(f'Escalation run ended, no data will be submitted', 'success')
                         self.clearData()
 
-                    # otherwise read screen
+                    # otherwise enter the loop of reading the screen
                     else:
 
-                        # process basic loot screen data
-                        data = self.loot_reader.readScreen(self.screen_capture)
+                        # wait briefly to ensure animation end
+                        time.sleep(self.LOOT_INTER)
 
-                        # check if the party was defeated
-                        if data['defeat']:
+                        # start the loop
+                        self._processLootLoop()
 
-                            # inform the user, abandon processing
-                            self.writeOutput(f'Party defeated, no data will be submitted', 'warning')
-                            self.clearData()
+    '''
+    Convenience function for loot screen reading loop
+    '''
+    def _processLootLoop(self):
+
+        # only try reading until we have loot data or until we leave the screen
+        while len(self.loot_data) <= 0 and self.loot_reader.detectLootScreen(self.screen_capture):
+
+            # take a new screencap
+            self.screenCap()
+
+            # process basic loot screen data
+            data = self.loot_reader.readScreen(self.screen_capture)
+
+            # check if the party was defeated
+            if data['defeat']:
+
+                # inform the user, abandon processing
+                self.writeOutput(f'Party defeated, no data will be submitted', 'warning')
+                self.clearData()
 
 
-                        # otherwise, check if valid hunt
-                        elif data['behemoth'] == self.lobby_data['behemoth'] or self.lobby_data['behemoth'] in self.lobby_reader.valid_hunts.keys():
+            # otherwise, check if valid hunt
+            elif data['behemoth'] == self.lobby_data['behemoth'] or self.lobby_data['behemoth'] in self.lobby_reader.valid_hunts.keys():
 
-                            # inform that more in-depth reading will now take place
-                            self.writeOutput(f'Loot screen detected, verifying...', 'info')
+                # inform that more in-depth reading will now take place
+                self.writeOutput(f'Loot screen detected, verifying...', 'info')
 
-                            # update lobby data
-                            self.lobby_data.update(data)
+                # update lobby data
+                self.lobby_data.update(data)
 
-                            # attempt to read the loot
-                            try:
-                                # store loot data in memory
-                                self.loot_data = self.loot_reader.readLoot(self.screen_capture, self.lobby_data['behemoth'])
-                                self.loot_data = self._processLootData()
+                # attempt to read the loot
+                try:
+                    # store loot data in memory
+                    self.loot_data = self.loot_reader.readLoot(self.screen_capture, self.lobby_data['behemoth'])
+                    self.loot_data = self._processLootData()
 
-                                # inform that everything is okay
-                                self.writeOutput(f'Valid loot data read, you may now leave the screen', 'success')
+                    # inform that everything is okay
+                    self.writeOutput(f'Valid loot data read, you may now leave the screen', 'success')
 
-                            # in case OCR read anomalous stack of items, handle error internally
-                            except ValueError as e:
-                                self.writeOutput(str(e), 'error')
+                # in case OCR read anomalous stack of items, handle error internally
+                except ValueError as e:
+                    self.writeOutput(str(e), 'error')
 
-                        # inform the reading will be attempted again
-                        else:
-                            self.writeOutput(f'Expected behemoth {self.lobby_data["behemoth"]} but found ' + 
-                                            f'{data["behemoth"]}, retrying...', 'warning')
-                            self._incrementException()
+            # inform the reading will be attempted again
+            else:
+                self.writeOutput(f'Expected behemoth {self.lobby_data["behemoth"]} but found ' + 
+                                f'{data["behemoth"]}, retrying...', 'warning')
+                self._incrementException()
+
+            # wait briefly to get a better screenshot
+            time.sleep(self.LOOP_INTER)
 
     '''
     Internal method for sampling the loot data into what will be submitted
@@ -546,9 +633,6 @@ class App(Configurable):
         # if loot data is not empty, submit loot data
         if len(self.loot_data) > 0:
 
-            print(f'Drop count: {len(self.loot_data)}')
-            print(self.lobby_data)
-
             # iterate over drops
             for drop in self.loot_data:
 
@@ -560,17 +644,19 @@ class App(Configurable):
                 drop['tier'] = self.lobby_data['tier']
 
                 # try submitting the drop
-                print(drop)
-                # try:
-                #     # send POST request
-                #     self.data_sender.submitData(drop, 'loot')
-
-                #     # inform about data submission
-                #     self.writeOutput(f'Loot data submitted', 'success')
+                try:
+                    # send POST request
+                    self.data_sender.submitData(drop, 'loot')
         
-                # # raise exception if encountered
-                # except HTTPError as e:
-                #     self.writeOutput(str(e), 'error')
+                # raise exception if encountered
+                except HTTPError as e:
+                    self.writeOutput(str(e), 'error')
+
+            # inform about data submission
+            self.writeOutput(f'Loot data submitted', 'success')
+
+            # save current screen
+            cv2.imwrite(f'{self.IMG_PATH}{uuid4()}.png', cv2.cvtColor(self.screen_capture, cv2.COLOR_RGB2BGR))
 
             # clear the data
             self.clearData()
@@ -586,17 +672,16 @@ class App(Configurable):
                 self.bounty_data['patch'] = self.patch
 
                 # try submitting the bounty
-                print(self.bounty_data)
-                # try:
-                #     # send a POST request
-                #     self.data_sender.submitData(self.bounty_data, 'bounty')
+                try:
+                    # send a POST request
+                    self.data_sender.submitData(self.bounty_data, 'bounty')
 
-                #     # inform about data submission
-                #     self.writeOutput(f'Bounty data submitted', 'success')
+                    # inform about data submission
+                    self.writeOutput(f'Bounty data submitted', 'success')
 
-                # # raise exception if encountered
-                # except HTTPError as e:
-                #     self.writeOutput(str(e), 'error')
+                # raise exception if encountered
+                except HTTPError as e:
+                    self.writeOutput(str(e), 'error')
 
                 # empty the data
                 self.clearData()

@@ -22,7 +22,7 @@ class LootReader(Reader):
     # path to the folder with screen slices
     TRGT_PATH = './data/targets/loot'
     # expected targets to be found
-    TRGT_CODE = ['breaks', 'detect', 'elite', 'trial', 'token']
+    TRGT_CODE = ['breaks', 'chest', 'detect', 'elite', 'trial', 'token']
 
     # paths related to item drops
     CELL_PATH = './data/json/drops/cells.json'
@@ -103,12 +103,23 @@ class LootReader(Reader):
         breaks_img = self.slices['base_drops'].sliceImage(image)
         if_breaks, breaks_xy = self.detectElement(breaks_img, self.targets['breaks'])
 
+        # find location of patrol bonus section
+        chest_img = self.slices['bonus_drops'].sliceImage(image)
+        if_chest, chest_xy = self.detectElement(chest_img, self.targets['chest'])
+
         # modify base drops slice accordingly
         if if_breaks:
             base_slice = self.slices['base_drops']
             base_slice.y1 = base_slice.y0 + breaks_xy[1]
         else:
             base_slice = self.slices['base_drops']
+
+        # modify bonus drops slice accordingly
+        if if_chest:
+            bonus_slice = self.slices['bonus_drops']
+            bonus_slice.y1 = bonus_slice.y0 + chest_xy[1]
+        else:
+            bonus_slice = self.slices['bonus_drops']
 
         # get base drops
         base_img = base_slice.sliceImage(image)
@@ -117,8 +128,6 @@ class LootReader(Reader):
         # get bonus drops
         bonus_img = self.slices['bonus_drops'].sliceImage(image)
         bonus_data = self._readLootSlice(bonus_img)
-
-        print(bonus_data)
 
         # test drop processing
         base_data = [self._processLootLine(line, behemoth) for line in base_data if line != '']
@@ -139,7 +148,7 @@ class LootReader(Reader):
     def _detectElite(self, image):
 
         # return the detection value
-        return self.detectFromSlice(image, 'elite')
+        return self.detectFromSlice(image, 'elite', prec=0.95)
 
     '''
     Internal method for processing the drop count

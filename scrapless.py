@@ -1,30 +1,56 @@
 import time
+import atexit
+import logging
 
 from app import App
 
-from fuzzywuzzy import fuzz, process
+'''
+Exit handler to clean things up
+'''
+def exit_handler():
 
+    # cease all logging to prevent empty files
+    logging.shutdown()
+
+'''
+Main function
+'''
 def main():
+
+    # register exit handler
+    atexit.register(exit_handler)
 
     # new instance of the main class
     scrapless = App()
 
-    # operate in an infinite loop
-    while True:
+    # run in try just to log 
+    # unexpected exceptions
+    try:
 
-        # capture the screen
-        scrapless.screenCap()
+        # operate in an infinite loop
+        while True:
 
-        # run processing functions
-        scrapless.processScreen()
+            # capture the screen
+            scrapless.screenCap()
 
-        # refresh the overlay to keep it responsive, if present
-        if scrapless.overlay.enabled:
-            scrapless.overlay.refresh()
+            # run processing functions
+            scrapless.processScreen()
 
-        # throttle the loop for performance
-        time.sleep(0.2)
+            # refresh the overlay to keep it responsive, if present
+            if scrapless.overlay.enabled:
+                scrapless.overlay.refresh()
 
+            # throttle the loop for performance
+            time.sleep(scrapless.LOOP_INTER)
+
+    # intercept the exception
+    except Exception as e:
+
+        # log the exception
+        scrapless.logger.error(str(e))
+
+        # shut down the app
+        quit()
 
 '''
 Standard stuff, run main function if running the file

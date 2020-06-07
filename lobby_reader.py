@@ -84,7 +84,7 @@ class LobbyReader(Reader):
         data['escalation'] = self._readEsca(image) if data['behemoth'] == '' else ''
         data['threat'] = self._readThreat(image)
         data['type'] = 'Patrol' if self.detectFromSlice(image, 'hunt_type') else 'Pursuit'
-        data['tier'] = self._readTier(data['threat'])
+        data['tier'] = data['escalation'] if data['escalation'] != 0 else self._readTier(data['threat'])
     
         # check for hunt validity
         self._validateHunt(data)
@@ -143,7 +143,7 @@ class LobbyReader(Reader):
 
         # launch the reader function
         text = self.readText(image, ocr_config='--psm 13', thresh_val=170, speck_size=1,
-                            scale_x=1, scale_y=1, border_size=5, invert=True)
+                            scale_x=4, scale_y=5, border_size=5, invert=True)
 
         # match the name against allowed escalation names
         text = self._fuzzyMatch(text, self.escal_names, 80)
@@ -215,7 +215,7 @@ class LobbyReader(Reader):
             return True
 
         # check if behemoth in valid hunts
-        if data['behemoth'] in self.valid_hunts.keys():
+        elif data['behemoth'] in self.valid_hunts.keys():
 
             # check if threat matches the behemoth
             if data['threat'] in self.valid_hunts[data['behemoth']] or 'Trial' in data['tier']:
@@ -224,4 +224,5 @@ class LobbyReader(Reader):
                 return True
 
         # otherwise, raise an exception
-        raise ValueError(f'Invalid hunt detected -- T{data["threat"]} {data["behemoth"]}')
+        else:
+            raise ValueError(f'Invalid hunt detected -- T{data["threat"]} {data["behemoth"]}')
