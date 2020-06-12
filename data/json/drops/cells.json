@@ -1,0 +1,170 @@
+{
+    "Assassin's Vigour": {
+        "Type": "Defence"
+    },
+    "Bloodless": {
+        "Type": "Defence"
+    },
+    "Fireproof": {
+        "Type": "Defence"
+    },
+    "Fortress": {
+        "Type": "Defence"
+    },
+    "Guardian": {
+        "Type": "Defence"
+    },
+    "Iceborne": {
+        "Type": "Defence"
+    },
+    "Insulated": {
+        "Type": "Defence"
+    },
+    "Nine Lives": {
+        "Type": "Defence"
+    },
+    "Shellshock Resist": {
+        "Type": "Defence"
+    },
+    "Strategist": {
+        "Type": "Defence"
+    },
+    "Sturdy": {
+        "Type": "Defence"
+    },
+    "Tough": {
+        "Type": "Defence"
+    },
+    "Warmth": {
+        "Type": "Defence"
+    },
+    "Agility": {
+        "Type": "Mobility"
+    },
+    "Conditioning": {
+        "Type": "Mobility"
+    },
+    "Endurance": {
+        "Type": "Mobility"
+    },
+    "Evasion": {
+        "Type": "Mobility"
+    },
+    "Fleet Footed": {
+        "Type": "Mobility"
+    },
+    "Grace": {
+        "Type": "Mobility"
+    },
+    "Nimble": {
+        "Type": "Mobility"
+    },
+    "Sprinter": {
+        "Type": "Mobility"
+    },
+    "Swift": {
+        "Type": "Mobility"
+    },
+    "Aetherhunter": {
+        "Type": "Power"
+    },
+    "Deconstruction": {
+        "Type": "Power"
+    },
+    "Discipline": {
+        "Type": "Power"
+    },
+    "Knockout King": {
+        "Type": "Power"
+    },
+    "Overpower": {
+        "Type": "Power"
+    },
+    "Pacifier": {
+        "Type": "Power"
+    },
+    "Rage": {
+        "Type": "Power"
+    },
+    "Ragehunter": {
+        "Type": "Power"
+    },
+    "Sharpened": {
+        "Type": "Power"
+    },
+    "Acidic": {
+        "Type": "Technique"
+    },
+    "Adrenaline": {
+        "Type": "Technique"
+    },
+    "Barbed": {
+        "Type": "Technique"
+    },
+    "Berserker": {
+        "Type": "Technique"
+    },
+    "Bladestorm": {
+        "Type": "Technique"
+    },
+    "Cunning": {
+        "Type": "Technique"
+    },
+    "Evasive Fury": {
+        "Type": "Technique"
+    },
+    "Merciless": {
+        "Type": "Technique"
+    },
+    "Molten": {
+        "Type": "Technique"
+    },
+    "Predator": {
+        "Type": "Technique"
+    },
+    "Savagery": {
+        "Type": "Technique"
+    },
+    "Weighted Strikes": {
+        "Type": "Technique"
+    },
+    "Wild Frenzy": {
+        "Type": "Technique"
+    },
+    "Aetherborne": {
+        "Type": "Utility"
+    },
+    "Aetheric Attunement": {
+        "Type": "Utility"
+    },
+    "Aetheric Frenzy": {
+        "Type": "Utility"
+    },
+    "Conduit": {
+        "Type": "Utility"
+    },
+    "Energized": {
+        "Type": "Utility"
+    },
+    "Engineer": {
+        "Type": "Utility"
+    },
+    "Lucent": {
+        "Type": "Utility"
+    },
+    "Medic": {
+        "Type": "Utility"
+    },
+    "Mender": {
+        "Type": "Utility"
+    },
+    "Stunning Vigour": {
+        "Type": "Utility"
+    },
+    "Vampiric": {
+        "Type": "Utility"
+    },
+    "Zeal": {
+        "Type": "Utility"
+    }
+}
