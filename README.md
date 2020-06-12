@@ -16,37 +16,29 @@ The spreadsheets which tracks all the results and computes statistics are availa
 
 ## 2. Configuration
 
-1. Open `config.json` located in `/scrapless/data/json/`
+1. Open `config.json` located in `/scrapless/data/json/config/`
 
 2. Provide your nickname in the `name` field of the `user` section of the config:
 
     a) This is stored for future time-series analysis and other per-user statistics. 
     
-    b) If you do not wish to be identifiable, leaving this field empty will prompt Scrapless to fill it with a random ID composed of 20 characters. It would be of great help if you used this exact ID in the future, even after migrating to newer versions of the program.
+    b) If you do not wish to be identifiable, leaving this field empty will prompt Scrapless to fill it with a random ID. It would be of great help if you used this exact ID in the future, even after migrating to newer versions of the program.
 
-3.  Provide necessary paths in the `paths` section of the file:
-
-    a) Add the path to your *Dauntless* folder in the `game` field (eg. `"game": "E:/Epic Games/Dauntless"`). This is necessary for the program to access game's current patch version.
+3. In the `tesseract` field, verify that the path leading to *tesseract.exe* is correct. 
     
-    b) In the `tesseract` field, verify that the path leading to *tesseract.exe* is correct. 
-    
-4. Leave the `screen` section untouched. This part of the configuration is there for the future development.
-
-5. Configure the `overlay`:
+4. Configure the `overlay.json` located in `/scrapless/data/json/config/`:
 
     a) You can completely disable the overlay by filling "No" in `enable` field.
     
     b) `opacity` is a numeric value describing how transparent the overlay background and output should be. For example, 65 means 65% opacity.
     
-    c) `position` provides screen coordinates for the upper left corner of the overlay. Be advised that the overlay is 500px wide, while its height is determined by `font_size` and `max_lines`.
+    c) `max_lines` sets a cap of how many output lines the overlay will show. All output is pushed to the console regardless.
     
-    d) `max_lines` sets a cap of how many output lines the overlay will show. All output is pushed to the console regardless.
-    
-    e) `font` sets the font to use in the output.
-    
-    f) `font_size` determines font size on the overlay.
-    
-    g) All fields in the `colors` section determine the colors of specific types of output lines and the background of the overlay. You can change them according to your wish. All colours are provided as HEX codes.
+    d) `position` provides screen coordinates for the upper left corner of the overlay. Be advised that the overlay is 500px wide, while its height is determined by `font_size` and `max_lines`.
+        
+    e) `font` sets the font family you want to use, along with font size. Standard modifiers like Bold and Cursive apply
+        
+    f) All fields in the `colors` section determine the colors of specific types of output lines and the background of the overlay. You can change them according to your wish. All colours are provided as HEX codes.
     
 # Usage
 
@@ -68,11 +60,9 @@ The idea behind Scrapless is simple: it uses image recognition and Optical Chara
 
 	- This is a pretty long process, but the program will inform you as soon as it has captured valid screenshot. The processing can happen in the background, so you can leave the loot screen at that point.
 
-4. In case of Escalation, the program has to first verify that you beat the last monster available (by reading the final rank). Once that is done, you can move to the Loot screen.
+4. In case of Escalation and Trials, the program will detect these, but will not attempt to read loot. This functionality is enabled merely to keep a unified flow of the application and for future expansion. The program will react appropriately to the end of hunt screen after either of these
 
 5. *Scrapless* will also detect when you are drafting a Bounty and it will log the quality of said Bounty as well.
-
-	- Keep in mind taht "Searching for Hunt" bar at the top of the screen will prevent *Scrapless* from detecting Bounty drafting. Draft your bounties outside of the queue.
 
 # Bugs and issues
 
