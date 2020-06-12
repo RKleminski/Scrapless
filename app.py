@@ -51,7 +51,7 @@ class App(Configurable):
 
     # time variables
     LOOP_INTER = 0.2
-    BNTY_INTER = 2.5
+    BNTY_INTER = 1.75
     LBBY_INTER = 0.5
     LOOT_INTER = 0.5
 
@@ -107,6 +107,9 @@ class App(Configurable):
             # exception counter for repeated issue handling
             self.exc_counter = 0
 
+            # welcome the user
+            self.welcomeMessage()
+
         except Exception as e:
 
             # log the exception
@@ -154,6 +157,17 @@ class App(Configurable):
         self.bounty_data = {}
         self.lobby_data = {}
         self.loot_data = []
+
+    '''
+    Method for writing out a welcome message in the application
+    '''
+    def welcomeMessage(self):
+
+        self.logger.info(f'==== WELCOME TO SCRAPLESS {self.PRG_VERS} ====')
+        self.logger.info(f'Dauntless ver {self.patch}')
+        self.logger.info(f'Username set to {self.user}')
+
+        print('\n')
 
     '''
     Method for printing out an output to logs and to overlay
@@ -399,7 +413,7 @@ class App(Configurable):
     def _processLootLoop(self):
 
         # only try reading until we have loot data or until we leave the screen
-        while len(self.loot_data) <= 0 and self.loot_reader.detectLootScreen(self.screen_capture):
+        while len(self.loot_data) <= 0 and self.loot_reader.detectLootScreen(self.screen_capture) and len(self.lobby_data) > 0:
 
             # take a new screencap
             self.screenCap()
@@ -471,6 +485,11 @@ class App(Configurable):
 
         # data from which to draw samples
         source_data = [drop for drop in self.loot_data if drop['rarity'] != 'Artifact (Dye)']
+
+        # in the event of sample count being higher than valid loot, take number of items
+        # in the loot - this is a safeguard against low-level hunts dropping part breaks on
+        # slay rolls
+        sample_count = min(sample_count, len(source_data))
 
         # draw the samples, reducing their number by dye drops present
         sample_data = random.sample(source_data, sample_count - len(submit_data))
@@ -654,9 +673,6 @@ class App(Configurable):
 
             # inform about data submission
             self.writeOutput(f'Loot data submitted', 'success')
-
-            # save current screen
-            cv2.imwrite(f'{self.IMG_PATH}{uuid4()}.png', cv2.cvtColor(self.screen_capture, cv2.COLOR_RGB2BGR))
 
             # clear the data
             self.clearData()

@@ -84,7 +84,7 @@ class LobbyReader(Reader):
         data['escalation'] = self._readEsca(image) if data['behemoth'] == '' else ''
         data['threat'] = self._readThreat(image)
         data['type'] = 'Patrol' if self.detectFromSlice(image, 'hunt_type') else 'Pursuit'
-        data['tier'] = data['escalation'] if data['escalation'] != 0 else self._readTier(data['threat'])
+        data['tier'] = data['escalation'] if data['escalation'] != '' else self._readTier(data['threat'])
     
         # check for hunt validity
         self._validateHunt(data)
@@ -142,8 +142,8 @@ class LobbyReader(Reader):
         image = self.slices['escalation'].sliceImage(image)
 
         # launch the reader function
-        text = self.readText(image, ocr_config='--psm 13', thresh_val=170, speck_size=1,
-                            scale_x=4, scale_y=5, border_size=5, invert=True)
+        text = self.readText(image, ocr_config='--psm 11', thresh_val=110, speck_size=1,
+                            scale_x=6, scale_y=7, border_size=20, invert=True)
 
         # match the name against allowed escalation names
         text = self._fuzzyMatch(text, self.escal_names, 80)
