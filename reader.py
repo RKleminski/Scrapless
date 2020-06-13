@@ -24,6 +24,7 @@ class Reader(Configurable):
         
         self.slices = {}
         self.targets = {}
+        self.behe_vocab = []
 
     '''
     Generic method for detecting an element on the screen slice
@@ -72,7 +73,7 @@ class Reader(Configurable):
     def readText(self, image, ocr_config, thresh_val, 
                 speck_size = 1, scale_x = 1, scale_y = 1, 
                 border_size = 100, shrink_border = 5, 
-                invert = False, debug=False):
+                invert = False, name=False, debug=False):
 
         # convert the input image to grayscale for better reading
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -95,7 +96,7 @@ class Reader(Configurable):
         image = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
         # trim the white border from around the image, to increase OCR quality
-        image = self._trimBorder(image, border_size, shrink_border)
+        image = self._trimBorder(image, border_size, shrink_border, name)
 
         if debug:
             cv2.imwrite('./debug_data/debug_text.png', image)
@@ -128,21 +129,31 @@ class Reader(Configurable):
     '''
     def _processBehemothName(self, text):
 
-        # reduce to one line, remove heroic classifier, 
-        # remove patrol classifier, trim trailing whitespaces
-        text = text.replace('\n', '').replace('(Heroic)', '').replace('Patrol', '').strip()
+        # pre-process text to remove whitespaces
+        text = text.replace('\n', ' ').strip()
 
-        # split text into an array
+        # split into an array
         text_arr = text.split(' ')
-        
-        # determine defeat
-        if_defeat = text_arr[0] == 'Defeated'
 
-        # retrieve the actual name
-        behemoth = text_arr[-1]
+        # overwrite the array with best matches for every element
+        text_arr = [self._fuzzyMatch(x, self.behe_vocab, 80) for x in text_arr]
 
-        # return values
-        return if_defeat, behemoth
+        # clean the array of undesired elements and filtered out artifacts of OCR
+        text_arr = [x for x in text_arr if not any([x == cond for cond in ['', '(Heroic)', 'Patrol']])]
+
+        # conditional to prevent breaking on empty list
+        if len(text_arr) == 0:
+            return False, ''
+
+        else:
+            # determine defeat
+            defeated = text_arr[0] == 'Defeated'
+
+            # retrieve behemoth name
+            behemoth = text_arr[1] if defeated else text_arr[0]
+
+            # return values
+            return defeated, behemoth
 
     '''
     Method for reading in screen slices
@@ -203,7 +214,7 @@ class Reader(Configurable):
     eg. just a singular point, the method will slightly reduce desired border 
     size and attempt again, until a valid image is created 
     '''
-    def _trimBorder(self, image, border, shrink = 5):
+    def _trimBorder(self, image, border, shrink = 5, name=False):
 
         # perform initial trimming
         trim_image = self._trimWhite(image, border)
@@ -211,7 +222,7 @@ class Reader(Configurable):
         # progressibely reduce size of white border if it causes invalid image to be created
         while (trim_image.shape[0] == 0 or trim_image.shape[1] == 0):
             border -= shrink
-            trim_image = self._trimWhite(image, border)
+            trim_image = self._trimWhite(image, border, name)
 
         # if the image is valid, return it
         return trim_image
@@ -221,7 +232,7 @@ class Reader(Configurable):
     of an image. Intended not to be used outside of its iterative parent method
     _trimBorder
     '''
-    def _trimWhite(self, image, border):
+    def _trimWhite(self, image, border, name = False):
 
         # negate the image bit-wise
         bit = cv2.bitwise_not(image)
@@ -238,7 +249,11 @@ class Reader(Configurable):
             maxy = max(nonzero[0])
 
             # crop the image while keeping a slight border around it
-            image = image[(miny-border):(maxy+border),(minx-border):(maxx+border)].copy()
+            # crop the names only from two sides
+            if name:
+                image = image[(miny-border):maxy,minx:(maxx+border)].copy()
+            else:
+                image = image[(miny-border):(maxy+border),(minx-border):(maxx+border)].copy()
 
         # return the input image
         return image

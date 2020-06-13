@@ -57,6 +57,9 @@ class LobbyReader(Reader):
         # load escalation names array
         self.escal_names = self._readValidEscas()
 
+        # load vocabulary of valid words to appear among behemoth names
+        self.behe_vocab = list(self.valid_hunts.keys())
+        self.behe_vocab.extend(['Defeated', 'Patrol'])
 
     '''
     Method for detecting the relevant screen, wraps the detectFromSlice wrapper
@@ -120,13 +123,14 @@ class LobbyReader(Reader):
 
         # launch the reader function
         text = self.readText(image, ocr_config='./data/tesseract/dauntless', thresh_val=110, 
-                            scale_x=6, scale_y=7, border_size=20, invert=True)
+                            scale_x=6, scale_y=7, border_size=20, invert=True, name=True)
 
         # preprocess the behemoth name
         if_defeat, text = self._processBehemothName(text)
 
-        # fuzzy match the name
-        text = self._fuzzyMatch(text, self.valid_hunts.keys(), 80)
+        # fuzzy match the name if there is anything to match
+        if text != '':
+            text = self._fuzzyMatch(text, self.valid_hunts.keys(), 80)
 
         # return the read text
         return text

@@ -24,6 +24,9 @@ class LootReader(Reader):
     # expected targets to be found
     TRGT_CODE = ['breaks', 'chest', 'detect', 'elite', 'trial', 'token']
 
+    # path to valid hunt file
+    HUNT_PATH = './data/json/huntdata/hunts.json'
+
     # paths related to item drops
     CELL_PATH = './data/json/drops/cells.json'
     ORBS_PATH = './data/json/drops/orbs.json'
@@ -51,6 +54,10 @@ class LootReader(Reader):
 
         # load OCR confusion
         self.ocr_confuse = self.readFile(self.CNFS_PATH)
+
+        # load vocabulary of valid words to appear among behemoth names
+        self.behe_vocab = list(self.readFile(self.HUNT_PATH).keys())
+        self.behe_vocab.extend(['Defeated', 'Patrol'])
 
     '''
     Method for detecting the relevant screen, wraps the detectFromSlice wrapper

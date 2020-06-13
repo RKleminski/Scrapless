@@ -33,7 +33,7 @@ class App(Configurable):
     #
     # data about this program 
     PRG_NAME = 'Scrapless'
-    PRG_VERS = '1.0.0'
+    PRG_VERS = '1.0.1.0'
 
     # path for config file
     SLF_PATH = './data/json/config/config.json'
