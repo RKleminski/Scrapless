@@ -33,7 +33,7 @@ class App(Configurable):
     #
     # data about this program 
     PRG_NAME = 'Scrapless'
-    PRG_VERS = '1.0.1.0'
+    PRG_VERS = '1.0.1.1'
 
     # path for config file
     SLF_PATH = './data/json/config/config.json'
@@ -479,17 +479,17 @@ class App(Configurable):
         # sampling is necessary because of numerous display bugs on loot screen
         sample_count = slay_rolls * 2 if len(self.loot_data) >= slay_rolls * 2 else slay_rolls
 
-        # fill submission data with dyes if present -- we always add dyes to submission data
+        # fill submission data with dyes and cells if present -- we always add them to submission data
         # because they can't drop from part break
-        submit_data = [drop for drop in self.loot_data if drop['rarity'] == 'Artifact (Dye)']
+        submit_data = [drop for drop in self.loot_data if drop['rarity'] in ['Artifact (Dye)', 'Rare (Cell)', 'Uncommon (Cell)']]
 
         # data from which to draw samples
-        source_data = [drop for drop in self.loot_data if drop['rarity'] != 'Artifact (Dye)']
+        source_data = [drop for drop in self.loot_data if drop['rarity'] not in ['Artifact (Dye)', 'Rare (Cell)', 'Uncommon (Cell)']]
 
         # in the event of sample count being higher than valid loot, take number of items
         # in the loot - this is a safeguard against low-level hunts dropping part breaks on
         # slay rolls
-        sample_count = min(sample_count, len(source_data))
+        sample_count = min(sample_count, len(self.loot_data))
 
         # draw the samples, reducing their number by dye drops present
         sample_data = random.sample(source_data, sample_count - len(submit_data))
