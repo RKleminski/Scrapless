@@ -33,7 +33,7 @@ class App(Configurable):
     #
     # data about this program 
     PRG_NAME = 'Scrapless'
-    PRG_VERS = '1.0.1.1'
+    PRG_VERS = '1.0.1.2'
 
     # path for config file
     SLF_PATH = './data/json/config/config.json'
@@ -51,9 +51,9 @@ class App(Configurable):
 
     # time variables
     LOOP_INTER = 0.2
-    BNTY_INTER = 1.75
-    LBBY_INTER = 0.5
-    LOOT_INTER = 0.5
+    BNTY_INTER = 1.5
+    LBBY_INTER = 0.25
+    LOOT_INTER = 0.25
 
     def __init__(self):
         

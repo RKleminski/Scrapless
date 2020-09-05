@@ -1,11 +1,11 @@
 {
     "Neutral/Elemental": {
-        "upper": 7,
+        "upper": 6,
         "lower": 1
     },
     "Dire": {
         "upper": 12,
-        "lower": 8
+        "lower": 7
     },
     "Heroic": {
         "upper": 16,
