@@ -6,7 +6,7 @@ import json
 
 #
 # set scrapless version
-scrap_ver = '1.0.1.2'
+scrap_ver = '1.0.1.3'
 distpath = Path('./dist')
 
 #
