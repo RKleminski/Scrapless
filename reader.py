@@ -142,12 +142,12 @@ class Reader(Configurable):
         text_arr = [x for x in text_arr if not any([x == cond for cond in ['', '(Heroic)', 'Patrol']])]
 
         # conditional to prevent breaking on empty list
-        if len(text_arr) == 0:
+        if len(text_arr) == 0 or 'Escalation' in text_arr:
             return False, ''
 
         else:
             # determine defeat
-            defeated = text_arr[0] == 'Defeated'
+            defeated = (text_arr[0] == 'Defeated')
 
             # retrieve behemoth name
             behemoth = text_arr[1] if defeated else text_arr[0]

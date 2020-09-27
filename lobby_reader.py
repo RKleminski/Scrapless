@@ -59,7 +59,7 @@ class LobbyReader(Reader):
 
         # load vocabulary of valid words to appear among behemoth names
         self.behe_vocab = list(self.valid_hunts.keys())
-        self.behe_vocab.extend(['Defeated', 'Patrol'])
+        self.behe_vocab.extend(['Defeated', 'Patrol', 'Escalation'])
 
     '''
     Method for detecting the relevant screen, wraps the detectFromSlice wrapper
@@ -88,7 +88,7 @@ class LobbyReader(Reader):
         data['threat'] = self._readThreat(image)
         data['type'] = 'Patrol' if self.detectFromSlice(image, 'hunt_type') else 'Pursuit'
         data['tier'] = data['escalation'] if data['escalation'] != '' else self._readTier(data['threat'])
-    
+
         # check for hunt validity
         self._validateHunt(data)
 
